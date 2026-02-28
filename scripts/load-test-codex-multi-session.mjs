@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Load Test: 10 Distinct Queries → Codex 5.2 in Separate Concurrent Sessions
+ * Load Test: 5 Long Questions → Codex 5.2 in Separate Concurrent Sessions
  *
- * Fires 10 distinct prompts to gpt-5.2-codex simultaneously,
+ * Fires 5 detailed "explain the code" prompts to gpt-5.2-codex simultaneously,
  * each in its own session, to stress-test multi-session concurrency.
  *
  * What it tests:
- * - 10 concurrent Pi RPC sessions running at the same time
+ * - 5 concurrent Pi RPC sessions running at the same time
  * - Each session receives only its own output (no cross-talk)
  * - All sessions complete with exit events
  * - Background streaming works for all sessions
@@ -37,126 +37,73 @@ const CODEX_MODEL = process.env.CODEX_MODEL || "gpt-5.2-codex";
 const PROVIDER = "codex";
 const TIMEOUT_MS = parseInt(process.env.TIMEOUT_MS || "600000", 10); // 10 min default
 const STAGGER_MS = parseInt(process.env.STAGGER_MS || "1000", 10); // stagger start by 1s
-const CWD = process.env.CWD_PROJECT || "/Users/yifanxu/machine_learning/LoVC/vce_test_space/number";
+const CWD = process.env.CWD_PROJECT || "/Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3";
 
-// ── 10 Distinct Queries ────────────────────────────────────────────────────
+// ── 5 Long "Explain the Code" Prompts ──────────────────────────────────────
 const PROMPTS = [
     {
-        label: "Q01-FibonacciScript",
-        prompt: `Create a file called fibonacci.js that implements the Fibonacci sequence. The script should:
-1. Export a function fibonacci(n) that returns the nth Fibonacci number using memoization for efficiency.
-2. Export a function fibonacciSequence(n) that returns an array of the first n Fibonacci numbers.
-3. Include a main block that prints the first 20 Fibonacci numbers when run directly with node.
-4. Add comprehensive JSDoc comments explaining the algorithm and time complexity.
-5. Handle edge cases: negative numbers should throw an error, 0 returns 0, 1 returns 1.
-In your final reply, include this exact verification token: {TOKEN}`,
+        label: "Q1-ServerArchitecture",
+        prompt: `Examine the entire server/ directory in this project. I want an extremely detailed explanation of the server architecture. Specifically:
+1. Walk through every file in server/ and server/routes/ — explain what each file does, its exports, and how it connects to the main server.js entry point.
+2. Explain the session management system: how sessions are created, stored on disk as JSONL files, discovered on startup, and streamed via SSE.
+3. Describe the Pi RPC process lifecycle — how piRpcSession.js spawns the Pi CLI, handles stdin/stdout JSON-RPC communication, and manages turn-based conversation flow.
+4. Explain the proxy.js module and how it handles request forwarding.
+5. Detail all environment variables and configuration options from server/config/index.js and how they affect behavior.
+6. Describe error handling patterns, graceful shutdown, and process cleanup across the server codebase.
+Be as thorough as possible — include code references, function signatures, and data flow diagrams in your explanation. In your final reply, include this exact verification token: {TOKEN}`,
     },
     {
-        label: "Q02-PrimeNumbers",
-        prompt: `Create a file called primes.js that implements various prime number algorithms:
-1. isPrime(n) — checks if a number is prime using trial division up to sqrt(n).
-2. sieveOfEratosthenes(limit) — returns all primes up to the given limit using the Sieve of Eratosthenes.
-3. nthPrime(n) — returns the nth prime number.
-4. primeFactorization(n) — returns the prime factorization of n as an array of [prime, exponent] pairs.
-5. Include a main block that demonstrates all functions with example outputs.
-6. Add detailed comments explaining the time and space complexity of each algorithm.
-In your final reply, include this exact verification token: {TOKEN}`,
+        label: "Q2-MobileAppServices",
+        prompt: `Analyze the apps/mobile/src/services/ directory comprehensively. I need a deep-dive explanation covering:
+1. List every service file and module — explain the purpose of each, its public API, and internal implementation details.
+2. Focus on the chat/ subdirectory: explain how chat sessions are managed client-side, how SSE connections are established and maintained, and how messages flow from user input to server and back.
+3. Explain the sessionCacheHelpers — what caching strategy is used, how cache eviction works, and how sessions persist across app restarts.
+4. Detail any API client utilities — how HTTP requests are constructed, error handling, retry logic, and authentication flow.
+5. Walk through any state management patterns — React hooks, context providers, or stores used by the services layer.
+6. Explain how the mobile app handles offline scenarios, reconnection, and session recovery.
+7. Describe the relationship between the services layer and the UI components that consume them.
+Include specific function names, type signatures, and data flow explanations. In your final reply, include this exact verification token: {TOKEN}`,
     },
     {
-        label: "Q03-SortingAlgorithms",
-        prompt: `Create a file called sorting.js that implements and compares multiple sorting algorithms:
-1. bubbleSort(arr) — classic bubble sort with optimization for early termination.
-2. mergeSort(arr) — recursive merge sort implementation.
-3. quickSort(arr) — quicksort with median-of-three pivot selection.
-4. heapSort(arr) — heapsort using a max-heap.
-5. insertionSort(arr) — insertion sort.
-6. A benchmark function that generates random arrays of sizes [100, 1000, 10000] and times each algorithm.
-7. Include a main block that runs the benchmark and prints a formatted comparison table.
-All functions should sort in ascending order and not mutate the original array.
-In your final reply, include this exact verification token: {TOKEN}`,
+        label: "Q3-ComponentArchitecture",
+        prompt: `Perform a comprehensive analysis of the apps/mobile/src/components/ directory. I want an exhaustive explanation of the component architecture:
+1. List all top-level component directories and files — explain the purpose and responsibility of each component group.
+2. For the chat-related components, explain the full rendering pipeline: how messages are displayed, how streaming SSE data is rendered in real-time, auto-scroll behavior, and message formatting (markdown, code blocks, etc.).
+3. Analyze the file/ components — workspace sidebar, file tree, commit display — explain how they integrate with the backend file system APIs.
+4. Detail the navigation structure: how screens are organized, routing patterns, tab navigation, and deep linking if present.
+5. Explain the theming system: how dark/light mode works, color tokens, typography, spacing, and how themes are applied across components.
+6. Walk through any animation patterns: entrance animations, transitions, gesture handlers, and performance optimization techniques.
+7. Describe the modal system and how overlay components (process dashboard, workspace picker, etc.) are managed.
+8. Identify any shared utilities, custom hooks, or higher-order components that cross-cut the component tree.
+Be extremely detailed with code references and component hierarchy diagrams. In your final reply, include this exact verification token: {TOKEN}`,
     },
     {
-        label: "Q04-LinkedList",
-        prompt: `Create a file called linked-list.js that implements a doubly linked list data structure:
-1. A Node class with value, next, and prev properties.
-2. A DoublyLinkedList class with methods: append, prepend, insertAt, removeAt, find, reverse, toArray, size, isEmpty, clear.
-3. Implement Symbol.iterator so the list is iterable with for...of loops.
-4. Add a toString() method that displays the list as: "1 <-> 2 <-> 3".
-5. Include comprehensive error handling for out-of-bounds indices.
-6. Add a main block demonstrating all operations.
-7. Include JSDoc comments on every method.
-In your final reply, include this exact verification token: {TOKEN}`,
+        label: "Q4-BuildAndConfig",
+        prompt: `Analyze the entire build system, configuration, and project infrastructure. I need an exhaustive explanation covering:
+1. Walk through package.json at the root AND apps/mobile/package.json — explain every script, dependency, and devDependency. What does each package do and why is it included?
+2. Explain the monorepo structure: how the root package.json relates to apps/mobile, any workspace configuration (npm/yarn workspaces), and how dependencies are hoisted.
+3. Detail the TypeScript configuration: tsconfig.json files, path aliases, compiler options, and how they differ between environments (dev, build, test).
+4. Analyze Expo configuration: app.json, metro.config.js, babel.config, and any native build configurations. Explain how EAS Build works if configured.
+5. Walk through the jest.config: test setup, module name mapping, transform configuration, and test file patterns.
+6. Explain any CI/CD configuration, linting (ESLint), formatting (Prettier), and code quality tools.
+7. Detail the .env and .env.example files — all environment variables, their purposes, and how they flow from server to mobile app.
+8. Analyze the scripts/ directory: what each script does, when to use them, and how they integrate with the development workflow.
+9. Explain the docker/ directory and any containerization setup.
+Be comprehensive and include specific configuration values and their effects. In your final reply, include this exact verification token: {TOKEN}`,
     },
     {
-        label: "Q05-MatrixMath",
-        prompt: `Create a file called matrix.js that implements matrix operations:
-1. A Matrix class that stores a 2D array of numbers.
-2. Methods: add, subtract, multiply (matrix × matrix), scalarMultiply, transpose, determinant (for 2×2 and 3×3), inverse (for 2×2).
-3. Static methods: identity(n) to create an n×n identity matrix, zeros(rows, cols), random(rows, cols).
-4. A pretty-print method that displays the matrix in aligned columns.
-5. Validate dimensions in all operations and throw descriptive errors on mismatch.
-6. Include a main block that demonstrates all operations with example matrices.
-In your final reply, include this exact verification token: {TOKEN}`,
-    },
-    {
-        label: "Q06-BinarySearchTree",
-        prompt: `Create a file called bst.js that implements a binary search tree:
-1. A TreeNode class with value, left, right properties.
-2. A BST class with methods: insert, search, delete, min, max, height, isBalanced.
-3. Traversal methods: inOrder, preOrder, postOrder, levelOrder — each returning an array.
-4. A visualize() method that prints a simple ASCII tree representation.
-5. A fromArray(arr) static method to build a balanced BST from a sorted array.
-6. Handle duplicate values by ignoring them.
-7. Include a main block building a tree from [5, 3, 7, 1, 4, 6, 8, 2] and demonstrating all methods.
-In your final reply, include this exact verification token: {TOKEN}`,
-    },
-    {
-        label: "Q07-GraphAlgorithms",
-        prompt: `Create a file called graph.js that implements a graph with common algorithms:
-1. A Graph class supporting both directed and undirected graphs using an adjacency list.
-2. Methods: addVertex, addEdge (with optional weight), removeVertex, removeEdge, hasVertex, hasEdge, getNeighbors.
-3. BFS(start) and DFS(start) traversal methods returning arrays of visited vertices.
-4. shortestPath(start, end) using Dijkstra's algorithm for weighted graphs.
-5. hasCycle() to detect cycles in the graph.
-6. topologicalSort() for directed acyclic graphs.
-7. Include a main block demonstrating each algorithm with a sample graph.
-In your final reply, include this exact verification token: {TOKEN}`,
-    },
-    {
-        label: "Q08-StatisticsLib",
-        prompt: `Create a file called statistics.js that implements a statistics library:
-1. Basic: mean, median, mode, range, min, max, sum, count.
-2. Dispersion: variance, standardDeviation, coefficientOfVariation, interquartileRange.
-3. Correlation: pearsonCorrelation(x, y), covariance(x, y).
-4. A histogram(data, bins) function that returns bucket counts.
-5. A describe(data) function that returns a summary object with all basic and dispersion statistics.
-6. A percentile(data, p) function.
-7. All functions should validate input and throw errors for empty arrays or invalid arguments.
-8. Include a main block with sample datasets demonstrating all functions.
-In your final reply, include this exact verification token: {TOKEN}`,
-    },
-    {
-        label: "Q09-NumberConverter",
-        prompt: `Create a file called converter.js that converts between number bases and formats:
-1. decimalToBinary(n), binaryToDecimal(s), decimalToHex(n), hexToDecimal(s), decimalToOctal(n), octalToDecimal(s).
-2. A general convertBase(value, fromBase, toBase) function supporting bases 2-36.
-3. romanToDecimal(s) and decimalToRoman(n) for Roman numeral conversion (1-3999).
-4. numberToWords(n) that converts integers (up to 999,999) to English words (e.g., 42 → "forty-two").
-5. Validate all inputs and throw descriptive errors.
-6. Include a main block demonstrating all conversions with varied examples.
-In your final reply, include this exact verification token: {TOKEN}`,
-    },
-    {
-        label: "Q10-MathPuzzles",
-        prompt: `Create a file called puzzles.js that solves classic math puzzles programmatically:
-1. towerOfHanoi(n) — prints the steps to solve the Tower of Hanoi with n disks.
-2. nQueens(n) — finds all solutions to the N-Queens problem and returns them as 2D board arrays.
-3. magicSquare(n) — generates an n×n magic square (for odd n) using the Siamese method.
-4. collatzSequence(n) — returns the Collatz sequence starting from n until it reaches 1.
-5. pascalTriangle(rows) — generates Pascal's triangle as a 2D array.
-6. gcd(a, b) and lcm(a, b) using the Euclidean algorithm.
-7. Include a main block that demonstrates each puzzle with formatted output.
-In your final reply, include this exact verification token: {TOKEN}`,
+        label: "Q5-SkillsAndExtensions",
+        prompt: `Analyze the skills/ directory and the entire skill/extension system in this project. I want a comprehensive explanation covering:
+1. List every skill directory and explain what each skill does — its purpose, how it's activated, and what capabilities it provides.
+2. Explain the skill loading mechanism: how skills are discovered from the skills/ folder, how they're synced to .pi/skills-enabled, and how the server registers them with the Pi CLI via --skill flags.
+3. Detail the skill configuration format: what files each skill contains (SKILL.md, scripts/, examples/, resources/), the YAML frontmatter schema, and how instructions are structured.
+4. Analyze the skills-lock.json file — what it tracks, how it's updated, and its role in skill version management.
+5. Walk through the server/skills/index.js module — explain syncEnabledSkillsFolder, resolveAgentDir, and how symlinks are managed.
+6. Explain how skills interact with the Pi agent at runtime — how skill instructions are injected into the system prompt, how tool definitions are registered, and how the agent invokes skill capabilities.
+7. Describe the .agents/skills/ directory in the mobile app — how it differs from the server skills, and any skill-specific configurations.
+8. Analyze at least 3 specific skills in depth (e.g. terminal-runner, better-icons, nanobanana) — explain their implementation, MCP server integration if applicable, and usage patterns.
+9. Explain how new skills can be created, tested, and deployed.
+Include specific file paths, function signatures, and configuration examples. In your final reply, include this exact verification token: {TOKEN}`,
     },
 ];
 
@@ -327,7 +274,7 @@ function startProgressReporter(liveStates, labels) {
 
 async function main() {
     console.error("╔════════════════════════════════════════════════════════════╗");
-    console.error("║  LOAD TEST: 10 Distinct Queries → Codex in 10 Sessions   ║");
+    console.error("║  LOAD TEST: 5 Long Questions → Codex in 5 Sessions       ║");
     console.error("╚════════════════════════════════════════════════════════════╝");
     console.error(`  Server:   ${SERVER_URL}`);
     console.error(`  Model:    ${CODEX_MODEL}`);
@@ -476,7 +423,7 @@ async function main() {
     console.error("─────────────────────────────────────────────────────────────\n");
 
     if (allPassed) {
-        console.error("🎉 LOAD TEST PASSED — All 10 sessions completed successfully.");
+        console.error("🎉 LOAD TEST PASSED — All 5 sessions completed successfully.");
         console.error("   Multi-session concurrency with Codex is working correctly.\n");
         process.exit(0);
     } else {
