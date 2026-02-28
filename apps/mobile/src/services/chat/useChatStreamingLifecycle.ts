@@ -266,6 +266,9 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
       nextIdRef,
     });
     const hasStreamEndedRef = { current: false };
+    /** Guards against double finalization: set when handleStreamEnd finalizes,
+     *  checked in effect cleanup to skip redundant finalize. */
+    const hasFinalizedRef = { current: false };
     sawAgentEndRef.current = false;
     const retryCountRef = { current: 0 };
     const retryTimeoutRef: { current: ReturnType<typeof setTimeout> | null } = { current: null };
@@ -638,6 +641,7 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
         streamFlushTimeoutRef.current = null;
       }
       flushAssistantText();
+      hasFinalizedRef.current = true;
       handlers.finalizeAssistantMessageForSession();
       closeActiveSse("stream-end");
 
@@ -688,10 +692,13 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
         streamFlushTimeoutRef.current = null;
       }
       flushAssistantText();
-      // Finalize the assistant message so the session draft is cleared
-      // (unblocks disk refresh), stripTrailingIncompleteTag runs, and
-      // session state transitions from "running" to "idle".
-      handlers.finalizeAssistantMessageForSession();
+      // Only finalize if handleStreamEnd hasn't already done so.
+      // Without this guard, the effect cleanup runs a second finalize
+      // (triggered by the state change from the first finalize) which
+      // sees an empty draft and can clear the completed message.
+      if (!hasFinalizedRef.current) {
+        handlers.finalizeAssistantMessageForSession();
+      }
     };
   }, [
     closeActiveSse,

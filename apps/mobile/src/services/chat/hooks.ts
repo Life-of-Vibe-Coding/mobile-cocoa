@@ -424,6 +424,7 @@ export function useChat(options: UseChatOptions = {}) {
     pendingMessagesForNewSessionRef,
     outputBufferRef,
     displayedSessionIdRef,
+    skipReplayForSessionRef,
     addMessage,
     deduplicateMessageIds,
     getOrCreateSessionState,

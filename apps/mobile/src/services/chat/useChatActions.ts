@@ -25,6 +25,7 @@ type UseChatActionsParams = {
   pendingMessagesForNewSessionRef: MutableRefObject<Message[]>;
   outputBufferRef: MutableRefObject<string>;
   displayedSessionIdRef: MutableRefObject<string | null>;
+  skipReplayForSessionRef: MutableRefObject<string | null>;
   addMessage: (role: Message["role"], content: string, codeReferences?: CodeReference[]) => string;
   deduplicateMessageIds: (messages: Message[]) => Message[];
   getOrCreateSessionState: (sid: string) => SessionLiveState;
@@ -56,6 +57,7 @@ export function useChatActions(params: UseChatActionsParams) {
     pendingMessagesForNewSessionRef,
     outputBufferRef,
     displayedSessionIdRef,
+    skipReplayForSessionRef,
     addMessage,
     deduplicateMessageIds,
     getOrCreateSessionState,
@@ -179,6 +181,10 @@ export function useChatActions(params: UseChatActionsParams) {
           outputBufferRef.current = "";
           setSessionDraft(newSessionId, "");
           setSessionStateForSession(newSessionId, "running");
+          // The client already holds messages for this session in memory.
+          // Skip JSONL replay so previous turns' message_update events
+          // are not re-processed and duplicated into the new response.
+          skipReplayForSessionRef.current = newSessionId;
           setConnectionIntent(newSessionId, true);
           if (!sessionId || sessionId !== newSessionId) {
             setSessionId(newSessionId);
