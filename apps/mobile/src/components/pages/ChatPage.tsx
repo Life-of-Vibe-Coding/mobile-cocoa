@@ -187,6 +187,8 @@ export function ChatPage({
   inputDock,
   modals,
 }: ChatPageProps) {
+  const isFileViewerOpen = fileViewer.selectedFilePath != null;
+
   return (
     <ChatModalsSection
       context={context}
@@ -196,50 +198,46 @@ export function ChatPage({
       {(modalHandlers) => {
         return (
           <Box className="flex-1 bg-surface-base">
-            <ChatPageShell
-              context={context}
-              runtime={runtime}
-              header={header}
-              conversation={conversation}
-              fileViewer={fileViewer}
-              sidebar={sidebar}
-              inputDock={inputDock}
-              modalHandlers={modalHandlers}
-            />
-
-            {sidebar.visible && (
-              <EntranceAnimation
-                variant="slideLeft"
-                duration={250}
-                style={{ ...StyleSheet.absoluteFillObject }}
-              >
-                <WorkspaceSidebarPage
-                  isOpen={sidebar.visible}
-                  onClose={sidebar.onCloseSidebar}
-                  onFileSelect={sidebar.onFileSelectFromSidebar}
-                  onCommitByAI={sidebar.onCommitByAI}
-                  onActiveTabChange={sidebar.onSidebarTabChange}
+            {isFileViewerOpen ? (
+              <FileViewerPage
+                isOpen
+                path={fileViewer.selectedFilePath!}
+                content={fileViewer.fileContent}
+                isImage={fileViewer.fileIsImage}
+                loading={fileViewer.fileLoading}
+                error={fileViewer.fileError}
+                onClose={fileViewer.onCloseFileViewer}
+                onAddCodeReference={fileViewer.onAddCodeReference}
+              />
+            ) : (
+              <>
+                <ChatPageShell
+                  context={context}
+                  runtime={runtime}
+                  header={header}
+                  conversation={conversation}
+                  fileViewer={fileViewer}
+                  sidebar={sidebar}
+                  inputDock={inputDock}
+                  modalHandlers={modalHandlers}
                 />
-              </EntranceAnimation>
-            )}
 
-            {fileViewer.selectedFilePath != null && (
-              <EntranceAnimation
-                variant="slideRight"
-                duration={250}
-                style={{ ...StyleSheet.absoluteFillObject }}
-              >
-                <FileViewerPage
-                  isOpen
-                  path={fileViewer.selectedFilePath}
-                  content={fileViewer.fileContent}
-                  isImage={fileViewer.fileIsImage}
-                  loading={fileViewer.fileLoading}
-                  error={fileViewer.fileError}
-                  onClose={fileViewer.onCloseFileViewer}
-                  onAddCodeReference={fileViewer.onAddCodeReference}
-                />
-              </EntranceAnimation>
+                {sidebar.visible && (
+                  <EntranceAnimation
+                    variant="slideLeft"
+                    duration={250}
+                    style={{ ...StyleSheet.absoluteFillObject }}
+                  >
+                    <WorkspaceSidebarPage
+                      isOpen={sidebar.visible}
+                      onClose={sidebar.onCloseSidebar}
+                      onFileSelect={sidebar.onFileSelectFromSidebar}
+                      onCommitByAI={sidebar.onCommitByAI}
+                      onActiveTabChange={sidebar.onSidebarTabChange}
+                    />
+                  </EntranceAnimation>
+                )}
+              </>
             )}
           </Box>
         );

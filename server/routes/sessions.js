@@ -118,6 +118,9 @@ export function registerSessionsRoutes(app) {
         return discovered;
     }
 
+    /** Staleness threshold (ms): sessions not modified within this window are considered idling. */
+    const STALE_SESSION_MS = 60_000; // 1 minute
+
     // GET /api/sessions/status - Session status list for client UI
     router.get("/status", (_, res) => {
         const discovered = [];
@@ -127,8 +130,14 @@ export function registerSessionsRoutes(app) {
                 return res.json({ ok: true, sessions: discovered, projectRootPath: getWorkspaceCwd() });
             }
 
+            const now = Date.now();
             for (const record of records) {
-                const running = record.activeSession?.processManager?.processRunning?.() ?? false;
+                let running = record.activeSession?.processManager?.processRunning?.() ?? false;
+                // Sessions without agent_end (e.g. connection server drop) may appear running.
+                // If the session file hasn't been modified in over 1 minute, force idling.
+                if (running && (now - record.mtimeMs) > STALE_SESSION_MS) {
+                    running = false;
+                }
                 discovered.push({
                     id: record.id,
                     cwd: (typeof record.cwd === "string" && record.cwd.trim()) ? record.cwd : null,
@@ -167,7 +176,7 @@ export function registerSessionsRoutes(app) {
         const sessionDir = getSessionDir(sessionId);
         try {
             fs.mkdirSync(sessionDir, { recursive: true });
-        } catch (_) {}
+        } catch (_) { }
         const iso = new Date().toISOString().replace(/:/g, "-").replace(".", "-");
         const fileName = `${iso}_${sessionId}.jsonl`;
         const filePath = path.join(sessionDir, fileName);
@@ -203,9 +212,15 @@ export function registerSessionsRoutes(app) {
                 return res.json({ sessions: discovered, projectRootPath: getWorkspaceCwd() });
             }
 
+            const now = Date.now();
             for (const record of records) {
                 const sseConnected = record.activeSession ? record.activeSession.subscribers?.size > 0 : false;
-                const running = record.activeSession?.processManager?.processRunning?.() ?? false;
+                let running = record.activeSession?.processManager?.processRunning?.() ?? false;
+                // Sessions without agent_end (e.g. connection server drop) may appear running.
+                // If the session file hasn't been modified in over 1 minute, force idling.
+                if (running && (now - record.mtimeMs) > STALE_SESSION_MS) {
+                    running = false;
+                }
                 const resolvedCwd = (typeof record.cwd === "string" && record.cwd.trim())
                     ? record.cwd
                     : (deriveCwdFromFilePath(record.filePath) || getWorkspaceCwd());

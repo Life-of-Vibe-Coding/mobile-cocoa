@@ -729,8 +729,8 @@ export function InputPanel({
                       style={{
                         position: "absolute",
                         bottom: triggerLayout.current
-                          ? (Dimensions.get("window").height - triggerLayout.current.y + 60)
-                          : 160,
+                          ? (Dimensions.get("window").height - triggerLayout.current.y + 8)
+                          : 100,
                         right: 16,
                         flexDirection: "row",
                         alignItems: "center",
