@@ -395,16 +395,10 @@ export function useChatActions(params: UseChatActionsParams) {
 
   const startNewSession = useCallback(async () => {
     if (sessionId) {
-      try {
-        await fetch(`${serverUrl}/api/sessions/${sessionId}/terminate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resetSession: true }),
-        });
-      } catch (err) {
-        console.error("Failed to terminate session", err);
-      }
-      if (__DEV__) console.log("[sse] disconnected (new session)", { sessionId });
+      // Only disconnect the client-side SSE stream — do NOT terminate the
+      // server-side Pi process.  This allows the previous session to keep
+      // running in the background so the user can switch back to it later.
+      if (__DEV__) console.log("[sse] disconnected (new session, keeping server process)", { sessionId });
       closeActiveSse("new-session");
       clearConnectionIntent(sessionId);
     }
@@ -419,8 +413,6 @@ export function useChatActions(params: UseChatActionsParams) {
   }, [
     closeActiveSse,
     sessionId,
-    serverUrl,
-    setConnectionIntent,
     clearConnectionIntent,
     pendingMessagesForNewSessionRef,
     setLiveSessionMessages,

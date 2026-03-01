@@ -341,7 +341,21 @@ export function createPiRpcSession({
     const piProvider = getPiProviderForModel(options.clientProvider ?? "claude", options.model);
     const piCfg = loadPiConfig();
     const defaultModels = piCfg.defaultModels ?? {};
-    const rawModel = options.model ?? (defaultModels[piProvider] || "gemini-3.1-pro-preview");
+
+    // Validate that the requested model exists in the models config.
+    // If the client sent a stale/cached model ID (e.g. deprecated "gemini-3-pro-high"),
+    // fall back to the provider's default model.
+    let rawModel = options.model ?? (defaultModels[piProvider] || "gemini-3.1-pro-preview");
+    const modelsCfg = loadModelsConfig();
+    const allKnownModels = Object.values(modelsCfg.providers ?? {}).flatMap(
+      (p) => (p.models ?? []).map((m) => m.value)
+    );
+    if (rawModel && allKnownModels.length > 0 && !allKnownModels.includes(rawModel)) {
+      const fallbackModel = defaultModels[piProvider] || "gemini-3.1-pro-preview";
+      console.warn(`[pi] Unknown model "${rawModel}" — falling back to "${fallbackModel}"`);
+      rawModel = fallbackModel;
+    }
+
     const piModel = toPiModel(rawModel, piProvider);
     const cwd = getWorkspaceCwd();
     // Session dir = base sessions folder (sessions/). Pi expects this base; it creates
@@ -491,6 +505,7 @@ export function createPiRpcSession({
 
   async function startTurn({ prompt, options }) {
     turnCompleted = false;
+    turnRunning = true;
     closeIoOutputStream();
     await ensurePiProcess({
       clientProvider: options.clientProvider,

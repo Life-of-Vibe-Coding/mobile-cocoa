@@ -26,16 +26,16 @@
             "defaultModel": "gemini-3.1-pro-preview",
             "models": [
                 {
-                    "value": "gemini-3.1-flash",
-                    "label": "3.1 Flash"
+                    "value": "gemini-2.5-flash",
+                    "label": "2.5 Flash"
                 },
                 {
-                    "value": "gemini-3.1-pro-low",
-                    "label": "3.1 Pro Low"
+                    "value": "gemini-3-flash-preview",
+                    "label": "3 Flash Preview"
                 },
                 {
-                    "value": "gemini-3.1-pro-high",
-                    "label": "3.1 Pro High"
+                    "value": "gemini-3-pro-preview",
+                    "label": "3 Pro Preview"
                 },
                 {
                     "value": "gemini-3.1-pro-preview",
@@ -55,6 +55,10 @@
                 {
                     "value": "gpt-5.2-codex",
                     "label": "GPT-5.2 Codex"
+                },
+                {
+                    "value": "gpt-5.3-codex",
+                    "label": "GPT-5.3 Codex"
                 }
             ]
         }

@@ -1,9 +1,6 @@
-import {
-    CLAUDE_MODELS, CODEX_MODELS, DEFAULT_CLAUDE_MODEL,
-    DEFAULT_CODEX_MODEL,
-    DEFAULT_GEMINI_MODEL, GEMINI_MODELS
-} from "@/constants/modelOptions";
+import type { ModelOption } from "@/constants/modelOptions";
 import type { Message } from "@/core";
+import { getModelsConfigSync } from "@/services/server/modelsApi";
 import { ColorMode, ColorModePreference } from "@/theme";
 import { getBackendPermissionMode, type PermissionModeUI } from "@/utils/permission";
 
@@ -38,16 +35,22 @@ export function getDefaultPermissionModeUI(): PermissionModeUI {
     : "yolo";
 }
 
+/**
+ * Return the default model for a provider.
+ * Reads from the server-fetched config cache (falls back to built-in defaults).
+ */
 export function getModel(provider: string): string {
-  return provider === "claude"
-    ? DEFAULT_CLAUDE_MODEL
-    : provider === "gemini"
-      ? DEFAULT_GEMINI_MODEL
-      : DEFAULT_CODEX_MODEL;
+  const cfg = getModelsConfigSync();
+  return cfg.providers[provider]?.defaultModel ?? "";
 }
 
-export function getModelOptions(provider: string) {
-  return provider === "claude" ? CLAUDE_MODELS : provider === "codex" ? CODEX_MODELS : GEMINI_MODELS;
+/**
+ * Return the model options for a provider.
+ * Reads from the server-fetched config cache (falls back to built-in defaults).
+ */
+export function getModelOptions(provider: string): ModelOption[] {
+  const cfg = getModelsConfigSync();
+  return cfg.providers[provider]?.models ?? [];
 }
 
 export function getSubmitPermissionConfig(permissionModeUI: PermissionModeUI, provider: string) {

@@ -1,11 +1,9 @@
 /**
- * Model Options — Mobile App
+ * Model Options — Mobile App (BUILD-TIME FALLBACK ONLY)
  *
- * These values mirror config/models.json (the server-side source of truth).
- * When you add/remove/rename a model, update BOTH files.
- *
- * At runtime the mobile app fetches the canonical list from /api/models and
- * uses these constants only as a build-time fallback / type reference.
+ * The app fetches models dynamically from /api/models at startup.
+ * These constants are only used as fallback types and are NOT the
+ * source of truth. Edit config/models.json to add/remove/rename models.
  */
 
 import type { Provider } from "@/theme/index";

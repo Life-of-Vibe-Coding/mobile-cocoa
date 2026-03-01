@@ -67,7 +67,6 @@ export function loadPiConfig() {
       providerMapping: { claude: "anthropic", codex: "openai-codex" },
       providerRouting: {
         rules: [
-          { modelPattern: "^gemini-3-", excludePattern: "-preview$", provider: "google-antigravity" },
           { modelPattern: "^gemini-", provider: "google-gemini-cli" },
           { modelPattern: "^gpt-|^codex-", provider: "openai" },
           { modelPattern: "^claude-|^sonnet|^opus|^claude-haiku", provider: "anthropic" },

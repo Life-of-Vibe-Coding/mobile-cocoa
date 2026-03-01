@@ -195,7 +195,7 @@ export function useChat(options: UseChatOptions = {}) {
           // Normal end — agent_end was received.
           setSessionStateForSession(id, "idle");
           setWaitingForUserInput(false);
-        } else if (reason !== "session-switch" && reason !== "session-load") {
+        } else if (reason !== "session-switch" && reason !== "session-load" && reason !== "new-session") {
           // Server ended (crash/restart) while session was running — agent_end was never sent.
           // Transition to idle so the UI doesn't stay stuck in "running" state.
           if (__DEV__) console.log("[sse] server ended without agent_end, forcing idle", { sessionId: id, reason });

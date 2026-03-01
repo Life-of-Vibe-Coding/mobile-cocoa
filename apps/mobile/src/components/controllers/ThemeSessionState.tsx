@@ -2,13 +2,12 @@ import React, { useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
 
 import { createAppStyles } from "@/components/styles/appStyles";
-import { MODEL_OPTIONS_BY_PROVIDER, type Provider as BrandProvider } from "@/constants/modelOptions";
+import type { ModelOption, Provider as BrandProvider } from "@/constants/modelOptions";
 import {
-    getDefaultPermissionModeUI,
-    getModel,
-    getModelOptions,
-    getThemeMode
+  getDefaultPermissionModeUI,
+  getThemeMode
 } from "@/features/app/appConfig";
+import { useModelsConfig } from "@/hooks/useModelsConfig";
 import { buildTheme, getTheme } from "@/theme/index";
 import type { PermissionModeUI } from "@/utils/permission";
 
@@ -22,8 +21,8 @@ export type ThemeSessionStateState = {
   themeMode: ReturnType<typeof getThemeMode>;
   theme: ReturnType<typeof getTheme>;
   styles: ReturnType<typeof createAppStyles>;
-  modelOptions: ReturnType<typeof getModelOptions>;
-  providerModelOptions: typeof MODEL_OPTIONS_BY_PROVIDER;
+  modelOptions: ModelOption[];
+  providerModelOptions: Record<string, ModelOption[]>;
   permissionModeUI: PermissionModeUI;
   provider: BrandProvider;
   setProvider: (p: BrandProvider) => void;
@@ -31,15 +30,27 @@ export type ThemeSessionStateState = {
 
 export function ThemeSessionState({ children }: ThemeSessionStateProps) {
   const [provider, setProvider] = useState<BrandProvider>("codex");
-  const [model, setModel] = useState<string>(getModel(provider));
+
+  // ── Dynamic model config from server (/api/models) ──
+  const { modelsForProvider, defaultModelForProvider } = useModelsConfig();
+
+  const [model, setModel] = useState<string>(() => defaultModelForProvider(provider));
 
   const systemColorScheme = useColorScheme();
   const resolvedSystemMode = systemColorScheme === "dark" ? "dark" : "light";
   const themeMode = useMemo(() => getThemeMode("light", resolvedSystemMode), [resolvedSystemMode]);
   const theme = useMemo(() => buildTheme(provider, themeMode), [provider, themeMode]);
   const styles = useMemo(() => createAppStyles(theme), [theme]);
-  const modelOptions = useMemo(() => getModelOptions(provider), [provider]);
 
+  const modelOptions = useMemo(() => modelsForProvider(provider), [modelsForProvider, provider]);
+
+  const providerModelOptions = useMemo(() => {
+    const out: Record<string, ModelOption[]> = {};
+    for (const p of ["claude", "gemini", "codex"]) {
+      out[p] = modelsForProvider(p);
+    }
+    return out;
+  }, [modelsForProvider]);
 
   const permissionModeUI = useMemo(() => getDefaultPermissionModeUI(), []);
 
@@ -52,7 +63,7 @@ export function ThemeSessionState({ children }: ThemeSessionStateProps) {
     theme,
     styles,
     modelOptions,
-    providerModelOptions: MODEL_OPTIONS_BY_PROVIDER,
+    providerModelOptions,
     permissionModeUI,
   });
 }
