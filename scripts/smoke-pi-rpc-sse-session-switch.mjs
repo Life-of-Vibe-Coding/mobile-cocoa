@@ -65,15 +65,15 @@ const RUNS = [
     prompt: "Summarize the full project structure. Walk through each top-level directory, list important files, and explain the architecture. Be thorough. In your final reply, include this exact token: {TOKEN}.",
   },
   {
-    provider: "gemini",
-    model: "gemini-2.5-flash",
+    provider: "antigravity",
+    model: "gemini-3-flash",
     label: "session-C",
     cwd: CWD_PROJECT,
     prompt: "Describe what the backend does in detail. Inspect the server code, routes, API definitions, and database models. Explain the main flows and dependencies. Be comprehensive. In your final reply, include this exact token: {TOKEN}.",
   },
   {
-    provider: "gemini",
-    model: "gemini-2.5-flash",
+    provider: "antigravity",
+    model: "gemini-3-flash",
     label: "session-D",
     cwd: CWD_TEST_WS,
     prompt: "Analyze what skills or tools this project uses. Look at configuration files, package.json or requirements, and any skill definitions. Explain how each is used. Be thorough. In your final reply, include this exact token: {TOKEN}.",
@@ -155,7 +155,7 @@ function createSseCollector(sessionId, token, label) {
       resolved = true;
       try {
         es.close();
-      } catch (_) {}
+      } catch (_) { }
       resolve({
         label,
         token,
@@ -193,7 +193,7 @@ function createSseCollector(sessionId, token, label) {
       try {
         const data = ev.data ? JSON.parse(ev.data) : {};
         exitCode = data.exitCode ?? 0;
-      } catch (_) {}
+      } catch (_) { }
       clearTimeout(timeout);
       finish();
     });

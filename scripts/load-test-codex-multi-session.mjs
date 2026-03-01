@@ -37,7 +37,7 @@ const TIMEOUT_MS = parseInt(process.env.TIMEOUT_MS || "600000", 10); // 10 min d
 const STAGGER_MS = parseInt(process.env.STAGGER_MS || "1000", 10); // stagger start by 1s
 const CWD_BASE = process.env.CWD_BASE || "/Users/yifanxu/machine_learning/LoVC/vce_test_space";
 
-// ── 5 Diverse Queries across Claude, Gemini, Codex ─────────────────────────
+// ── 5 Diverse Queries across Claude, Antigravity, Codex ─────────────────────────
 const PROMPTS = [
     {
         // CODING PROJECT: Full-stack todo app — Claude
@@ -55,10 +55,10 @@ const PROMPTS = [
 Write the complete file. In your final reply, include this exact verification token: {TOKEN}`,
     },
     {
-        // PUZZLE: Brain teasers — Gemini
-        label: "Q02-BrainTeasers-Gemini",
-        provider: "gemini",
-        model: "gemini-2.5-pro",
+        // PUZZLE: Brain teasers — Antigravity
+        label: "Q02-BrainTeasers-Antigravity",
+        provider: "antigravity",
+        model: "gemini-3-pro-high",
         prompt: `Create a file called brain-teasers.js that solves these classic puzzles programmatically. For each puzzle, implement the solution and print the answer with a clear explanation:
 
 1. **River Crossing**: A farmer needs to cross a river with a wolf, a goat, and a cabbage. The boat fits only the farmer + one item. The wolf eats the goat if left alone, the goat eats the cabbage. Find the sequence of crossings using BFS.
@@ -124,10 +124,10 @@ Write all 3 files. In your final reply, include this exact verification token: {
 Write the complete file. In your final reply, include this exact verification token: {TOKEN}`,
     },
     {
-        // UI: Interactive dashboard — Gemini
-        label: "Q05-Dashboard-Gemini",
-        provider: "gemini",
-        model: "gemini-2.5-pro",
+        // UI: Interactive dashboard — Antigravity
+        label: "Q05-Dashboard-Antigravity",
+        provider: "antigravity",
+        model: "gemini-3-pro-high",
         prompt: `Create a file called dashboard.html — an analytics dashboard UI as a single self-contained HTML file. Requirements:
 
 1. **Sidebar**: A collapsible sidebar (toggle with hamburger icon) with navigation items: Dashboard, Analytics, Users, Settings. Active item highlighted. Icons as inline SVGs.
@@ -320,7 +320,7 @@ async function main() {
     console.error("║  LOAD TEST: 5 Queries → Claude / Gemini / Codex          ║");
     console.error("╚════════════════════════════════════════════════════════════╝");
     console.error(`  Server:   ${SERVER_URL}`);
-    console.error(`  Providers: claude (sonnet4.5), gemini (2.5-pro), codex (gpt-5.2-codex)`);
+    console.error(`  Providers: claude (sonnet4.5), antigravity (gemini-3-pro-high), codex (gpt-5.2-codex)`);
     console.error(`  Timeout:  ${TIMEOUT_MS / 1000}s per session`);
     console.error(`  Stagger:  ${STAGGER_MS}ms between session starts`);
     console.error(`  CWD Base: ${CWD_BASE} (each session gets its own /1 .. /5)`);
@@ -471,12 +471,12 @@ async function main() {
     console.error(`  Avg session time:   ${avgTime}s`);
     console.error(`  Total output:       ${(totalOutput / 1024).toFixed(1)}KB`);
     console.error(`  Total SSE events:   ${totalEvents}`);
-    console.error(`  Providers:          claude, gemini, codex`);
+    console.error(`  Providers:          claude, antigravity, codex`);
     console.error("─────────────────────────────────────────────────────────────\n");
 
     if (allPassed) {
         console.error("🎉 LOAD TEST PASSED — All 5 sessions completed successfully.");
-        console.error("   Multi-provider concurrency (Claude/Gemini/Codex) is working correctly.\n");
+        console.error("   Multi-provider concurrency (Claude/Antigravity/Codex) is working correctly.\n");
         process.exit(0);
     } else {
         console.error("⚠️  LOAD TEST HAD FAILURES — Check individual results above.\n");

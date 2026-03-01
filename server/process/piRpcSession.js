@@ -18,7 +18,7 @@ import { getActiveOverlay, getPreviewHost } from "../utils/index.js";
 const CLIENT_PROVIDER_TO_PI = {
   claude: "anthropic", // OAuth from auth.json
   codex: "openai-codex", // OAuth from auth.json
-  gemini: "google-gemini-cli", // OAuth from auth.json
+  antigravity: "google-gemini-cli", // OAuth from auth.json
 };
 
 /** Map client short model names to Pi CLI model IDs (Pi expects anthropic/claude-sonnet-4-5, not anthropic/sonnet4.5). */
@@ -75,7 +75,7 @@ function getPiProviderForModel(clientProvider, model) {
   if (typeof model === "string" && /^gemini-/.test(model)) return "google-gemini-cli";
   if (typeof model === "string" && /^gpt-/.test(model)) return "openai-codex";
   if (typeof model === "string" && (/^claude-/.test(model) || /^(sonnet4\.5|opus4\.5|claude-haiku)/.test(model))) return "anthropic";
-  if (clientProvider === "gemini") return "google-gemini-cli";
+  if (clientProvider === "antigravity") return "google-gemini-cli";
   if (clientProvider === "claude") return "anthropic";
   return "openai-codex";
 }
@@ -307,7 +307,7 @@ export function createPiRpcSession({
     if (piProcess) return;
 
     const piProvider = getPiProviderForModel(options.clientProvider ?? "claude", options.model);
-    const rawModel = options.model ?? (piProvider === "anthropic" ? "claude-sonnet-4-5" : piProvider === "openai" || piProvider === "openai-codex" ? "gpt-4o" : "gemini-2.0-flash");
+    const rawModel = options.model ?? (piProvider === "anthropic" ? "claude-sonnet-4-5" : piProvider === "openai" || piProvider === "openai-codex" ? "gpt-4o" : "gemini-3-flash");
     const piModel = toPiModel(rawModel, piProvider);
     const cwd = getWorkspaceCwd();
     // Session dir = base sessions folder (sessions/). Pi expects this base; it creates

@@ -1,7 +1,7 @@
 import {
     CLAUDE_MODELS, CODEX_MODELS, DEFAULT_CLAUDE_MODEL,
     DEFAULT_CODEX_MODEL,
-    DEFAULT_GEMINI_MODEL, GEMINI_MODELS
+    DEFAULT_ANTIGRAVITY_MODEL, ANTIGRAVITY_MODELS
 } from "@/constants/modelOptions";
 import type { Message } from "@/core";
 import { ColorMode, ColorModePreference } from "@/theme";
@@ -41,13 +41,13 @@ export function getDefaultPermissionModeUI(): PermissionModeUI {
 export function getModel(provider: string): string {
   return provider === "claude"
     ? DEFAULT_CLAUDE_MODEL
-    : provider === "gemini"
-      ? DEFAULT_GEMINI_MODEL
+    : provider === "antigravity"
+      ? DEFAULT_ANTIGRAVITY_MODEL
       : DEFAULT_CODEX_MODEL;
 }
 
 export function getModelOptions(provider: string) {
-  return provider === "claude" ? CLAUDE_MODELS : provider === "codex" ? CODEX_MODELS : GEMINI_MODELS;
+  return provider === "claude" ? CLAUDE_MODELS : provider === "codex" ? CODEX_MODELS : ANTIGRAVITY_MODELS;
 }
 
 export function getSubmitPermissionConfig(permissionModeUI: PermissionModeUI, provider: string) {

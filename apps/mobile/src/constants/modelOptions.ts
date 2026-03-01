@@ -15,9 +15,10 @@ export const CLAUDE_MODELS: ModelOption[] = [
   { value: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
 ];
 
-export const GEMINI_MODELS: ModelOption[] = [
-  { value: "gemini-2.5-flash", label: "2.5 Flash" },
-  { value: "gemini-2.5-pro", label: "2.5 Pro" },
+export const ANTIGRAVITY_MODELS: ModelOption[] = [
+  { value: "gemini-3-flash", label: "3 Flash" },
+  { value: "gemini-3-pro-low", label: "3 Pro Low" },
+  { value: "gemini-3-pro-high", label: "3 Pro High" },
 ];
 
 export const CODEX_MODELS: ModelOption[] = [
@@ -29,12 +30,12 @@ export const CODEX_MODELS: ModelOption[] = [
 
 export const MODEL_OPTIONS_BY_PROVIDER: Record<Provider, ModelOption[]> = {
   claude: CLAUDE_MODELS,
-  gemini: GEMINI_MODELS,
+  antigravity: ANTIGRAVITY_MODELS,
   codex: CODEX_MODELS,
 };
 
 export const DEFAULT_CLAUDE_MODEL = "sonnet4.5";
-export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+export const DEFAULT_ANTIGRAVITY_MODEL = "gemini-3-flash";
 export const DEFAULT_CODEX_MODEL = "gpt-5.1-codex-mini";
 
 export type { Provider };

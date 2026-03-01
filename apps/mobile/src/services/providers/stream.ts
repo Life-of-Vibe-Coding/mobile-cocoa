@@ -417,7 +417,7 @@ export function deniedToolToAllowedPattern(toolName: string | null | undefined):
 
 /**
  * Known provider CLI system noise lines to suppress from chat display.
- * These are startup/diagnostic messages from Gemini/Claude CLI that should not appear in the chat UI.
+ * These are startup/diagnostic messages from Antigravity/Claude CLI that should not appear in the chat UI.
  */
 const PROVIDER_NOISE_PATTERNS = [
   /^Approval mode overridden/i,

@@ -1,11 +1,11 @@
 /**
  * Process management for AI provider via Pi RPC (pi-mono).
- * Supports Claude, Gemini, and Codex through the unified Pi coding agent.
+ * Supports Claude, Antigravity, and Codex through the unified Pi coding agent.
  */
 import {
-    DEFAULT_PERMISSION_MODE,
-    DEFAULT_PROVIDER, getWorkspaceCwd,
-    projectRoot
+  DEFAULT_PERMISSION_MODE,
+  DEFAULT_PROVIDER, getWorkspaceCwd,
+  projectRoot
 } from "../config/index.js";
 
 import { createPiRpcSession } from "./piRpcSession.js";
@@ -18,16 +18,16 @@ export function shutdown(signal) {
       if (process.platform !== "win32" && c.pid) {
         try {
           process.kill(-c.pid, "SIGTERM");
-        } catch (_) {}
+        } catch (_) { }
       }
       c.kill();
-    } catch (_) {}
+    } catch (_) { }
   }
   globalSpawnChildren.clear();
   process.exit(0);
 }
 
-const VALID_PROVIDERS = ["codex", "gemini", "claude"];
+const VALID_PROVIDERS = ["codex", "antigravity", "claude"];
 
 function resolveProvider(fromPayload) {
   if (typeof fromPayload === "string" && VALID_PROVIDERS.includes(fromPayload)) {
@@ -39,7 +39,7 @@ function resolveProvider(fromPayload) {
 function getDefaultModelForProvider(provider) {
   if (provider === "claude") return "sonnet4.5";
   if (provider === "codex") return "gpt-5.1-codex-mini";
-  return "gemini-2.5-flash";
+  return "gemini-3-flash";
 }
 
 function emitError(socket, message) {
@@ -78,7 +78,7 @@ export function formatSessionLogTimestamp() {
 
 /**
  * Creates an AI process manager for a socket connection.
- * Uses Pi RPC for all providers (claude, gemini, codex).
+ * Uses Pi RPC for all providers (claude, antigravity, codex).
  */
 export function createProcessManager(socket, { hasCompletedFirstRunRef, session_management, onPiSessionId, existingSessionPath, sessionId }) {
   let turnCounter = 0;
@@ -230,7 +230,7 @@ function createSseSocketAdapter(sessionId, session, host = "localhost:3456") {
           } else {
             res.write(payload);
           }
-        } catch (_) {}
+        } catch (_) { }
       }
     },
     setHost(h) {

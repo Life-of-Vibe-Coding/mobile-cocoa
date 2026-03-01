@@ -1,5 +1,5 @@
 import {
-    PreviewWebViewAddressBar, PreviewWebViewBottomBar, PreviewWebViewPlaceholder, PreviewWebViewTabsPage
+  PreviewWebViewAddressBar, PreviewWebViewBottomBar, PreviewWebViewPlaceholder, PreviewWebViewTabsPage
 } from "@/components/preview/PreviewWebViewSubcomponents";
 import { UrlChoiceModal } from "@/components/preview/UrlChoiceModal";
 import { ModalScaffold } from "@/components/reusable/ModalScaffold";
@@ -11,7 +11,7 @@ import { useTheme } from "@/theme/index";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-    Keyboard, Platform, StyleSheet, useWindowDimensions
+  Keyboard, Platform, StyleSheet, useWindowDimensions
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -368,10 +368,6 @@ export function PreviewWebViewModal({
             {!resolvedUrl ? (
               <PreviewWebViewPlaceholder
                 theme={theme}
-                onStartBrowsing={() => {
-                  // user can tap address bar, but we can also just focus it. we don't have a ref though.
-                  // for now a no-op that just prompts action visually.
-                }}
               />
             ) : (
               <Box style={styles.webContainer}>

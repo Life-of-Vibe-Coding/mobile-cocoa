@@ -17,7 +17,7 @@ jest.mock('@/components/icons/ProviderIcons', () => {
   const Icon = () => <View />;
   return {
     ClaudeSendIcon: Icon,
-    GeminiSendIcon: Icon,
+    AntigravitySendIcon: Icon,
     CodexSendIcon: Icon,
     CodexEnterIcon: Icon,
   };

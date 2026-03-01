@@ -12,8 +12,8 @@ const sidebarTree = document.getElementById("sidebar-tree");
 const sidebarWorkspaceName = document.getElementById("sidebar-workspace-name");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 
-/** Current AI provider ("claude" | "gemini"). Fixed during chat; user cannot switch provider. */
-let currentProvider = "gemini";
+/** Current AI provider ("claude" | "antigravity"). Fixed during chat; user cannot switch provider. */
+let currentProvider = "antigravity";
 
 /** Model options per provider. Used for model dropdown only (provider not selectable in chat). */
 const CLAUDE_MODELS = [
@@ -21,20 +21,20 @@ const CLAUDE_MODELS = [
   { value: "sonnet", label: "Sonnet 4.5" },
   { value: "opus", label: "Opus 4.5" },
 ];
-const GEMINI_MODELS = [
-  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
-  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-  { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
+const ANTIGRAVITY_MODELS = [
+  { value: "gemini-3-pro-low", label: "Gemini 3 Pro Low" },
+  { value: "gemini-3-flash", label: "Gemini 3 Flash" },
+  { value: "gemini-3-pro-high", label: "Gemini 3 Pro High" },
 ];
 const DEFAULT_CLAUDE_MODEL = "sonnet";
-const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const DEFAULT_ANTIGRAVITY_MODEL = "gemini-3-flash";
 
 function getModelsForProvider(provider) {
-  return provider === "claude" ? CLAUDE_MODELS : GEMINI_MODELS;
+  return provider === "claude" ? CLAUDE_MODELS : ANTIGRAVITY_MODELS;
 }
 
 /** Current model. User can switch model only; provider is fixed. */
-let currentModel = DEFAULT_GEMINI_MODEL;
+let currentModel = DEFAULT_ANTIGRAVITY_MODEL;
 
 const socket = io();
 
@@ -50,7 +50,7 @@ async function fetchSidebarConfig() {
     if (cfg.sidebarRefreshIntervalMs && cfg.sidebarRefreshIntervalMs > 0) {
       sidebarRefreshIntervalMs = cfg.sidebarRefreshIntervalMs;
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 async function fetchWorkspaceTree() {
@@ -58,7 +58,7 @@ async function fetchWorkspaceTree() {
     const res = await fetch("/api/workspace-tree");
     const data = await res.json();
     if (data.tree && data.root) return data;
-  } catch (_) {}
+  } catch (_) { }
   return null;
 }
 
@@ -189,10 +189,10 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-const PROVIDER_ACCENT = { gemini: "#1a73e8", claude: "#b3541e", codex: "#19c37d" };
+const PROVIDER_ACCENT = { antigravity: "#1a73e8", claude: "#b3541e", codex: "#19c37d" };
 
 function getHighlightColorForProvider(provider) {
-  return PROVIDER_ACCENT[provider] || PROVIDER_ACCENT.gemini;
+  return PROVIDER_ACCENT[provider] || PROVIDER_ACCENT.antigravity;
 }
 
 /** Replace span background-color highlights with text color using the provider's theme accent. */
@@ -231,7 +231,7 @@ function createMessageElement(role, content, meta = {}) {
 
   const avatar = document.createElement("div");
   avatar.className = "avatar";
-  avatar.textContent = role === "assistant" ? (currentProvider === "gemini" ? "G" : "C") : role === "user" ? "You" : "!";
+  avatar.textContent = role === "assistant" ? (currentProvider === "antigravity" ? "A" : "C") : role === "user" ? "You" : "!";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
@@ -572,8 +572,8 @@ setTypingIndicator(false);
 initSidebar();
 
 function initProviderSelector() {
-  document.body.classList.add(currentProvider === "gemini" ? "provider-gemini" : "provider-claude");
-  if (promptInput) promptInput.placeholder = currentProvider === "gemini" ? "Ask Gemini" : DEFAULT_PLACEHOLDER;
+  document.body.classList.add(currentProvider === "antigravity" ? "provider-antigravity" : "provider-claude");
+  if (promptInput) promptInput.placeholder = currentProvider === "antigravity" ? "Ask Antigravity" : DEFAULT_PLACEHOLDER;
   const container = inputForm || permissionModeSelect?.parentNode;
   if (!container) return;
   const wrap = document.createElement("span");
@@ -585,7 +585,7 @@ function initProviderSelector() {
   wrap.innerHTML = '<label class="input-bar-label">Model: <select id="model-select"></select></label>';
   const modelSel = wrap.querySelector("#model-select");
   const models = getModelsForProvider(currentProvider);
-  const defaultModel = currentProvider === "claude" ? DEFAULT_CLAUDE_MODEL : DEFAULT_GEMINI_MODEL;
+  const defaultModel = currentProvider === "claude" ? DEFAULT_CLAUDE_MODEL : DEFAULT_ANTIGRAVITY_MODEL;
   const validValues = models.map((m) => m.value);
   if (!validValues.includes(currentModel)) currentModel = defaultModel;
   modelSel.innerHTML = models.map((m) => `<option value="${m.value}">${m.label}</option>`).join("");

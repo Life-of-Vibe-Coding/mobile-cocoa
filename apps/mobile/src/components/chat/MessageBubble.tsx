@@ -474,7 +474,7 @@ interface MessageBubbleProps {
   showAsTailBox?: boolean;
   /** Max height for the tail box (e.g. half screen). Only used when showAsTailBox is true. */
   tailBoxMaxHeight?: number;
-  /** AI provider for assistant messages; shows Gemini, Claude, or Codex icon when set. */
+  /** AI provider for assistant messages; shows Antigravity, Claude, or Codex icon when set. */
   provider?: string;
   /** When provided, links (including bare URLs) open in the app's internal browser instead of external. */
   onOpenUrl?: (url: string) => void;

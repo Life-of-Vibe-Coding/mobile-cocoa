@@ -192,45 +192,12 @@ export function PreviewWebViewAddressBar({
   );
 }
 
-export function PreviewWebViewPlaceholder({ onStartBrowsing, theme }: { onStartBrowsing: () => void; theme: DesignTheme }) {
+export function PreviewWebViewPlaceholder({ theme }: { theme: DesignTheme }) {
   return (
     <Box style={{ flex: 1, alignItems: "center", paddingTop: 64, paddingHorizontal: 24, backgroundColor: theme.colors.surface }}>
       <Box style={{ width: 256, height: 256, borderRadius: 128, backgroundColor: theme.mode === 'dark' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.05)', alignItems: "center", justifyContent: "center", marginBottom: 32 }}>
         <Box style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: theme.colors.accent, alignItems: "center", justifyContent: "center" }}>
           <Icons.Globe color="#000" size={32} />
-        </Box>
-      </Box>
-      <Text style={{ fontSize: 26, fontWeight: "bold", color: theme.colors.textPrimary, marginBottom: 16, textAlign: "center" }}>Vibe Coding Everywhere</Text>
-      <Text style={{ fontSize: 17, color: theme.colors.textSecondary, textAlign: "center", marginBottom: 32, paddingHorizontal: 8, lineHeight: 24 }}>
-        Browse the web securely with a modern, lightweight interface designed for speed.
-      </Text>
-
-      <Pressable
-        style={{ width: "100%", height: 56, backgroundColor: theme.colors.accent, borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 40 }}
-        onPress={onStartBrowsing}
-      >
-        <Icons.Search color="#000" size={20} />
-        <Text style={{ color: "#000", fontWeight: "600", fontSize: 17, marginLeft: 8 }}>Start Browsing</Text>
-      </Pressable>
-
-      <Box style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", width: "100%", paddingHorizontal: 16 }}>
-        <Box style={{ alignItems: "center" }}>
-          <Box style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-            <Icons.Bookmark color={theme.colors.accent} size={24} />
-          </Box>
-          <Text style={{ fontSize: 13, color: theme.colors.textSecondary }}>Bookmarks</Text>
-        </Box>
-        <Box style={{ alignItems: "center" }}>
-          <Box style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-            <Icons.History color={theme.colors.accent} size={24} />
-          </Box>
-          <Text style={{ fontSize: 13, color: theme.colors.textSecondary }}>History</Text>
-        </Box>
-        <Box style={{ alignItems: "center" }}>
-          <Box style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-            <Icons.Download color={theme.colors.accent} size={24} />
-          </Box>
-          <Text style={{ fontSize: 13, color: theme.colors.textSecondary }}>Downloads</Text>
         </Box>
       </Box>
     </Box>

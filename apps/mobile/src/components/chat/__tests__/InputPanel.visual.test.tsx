@@ -17,7 +17,7 @@ jest.mock("@/components/icons/ProviderIcons", () => {
   const Icon = () => <View />;
   return {
     ClaudeSendIcon: Icon,
-    GeminiSendIcon: Icon,
+    AntigravitySendIcon: Icon,
     CodexSendIcon: Icon,
     CodexEnterIcon: Icon,
   };
@@ -82,7 +82,7 @@ function baseProps() {
     providerModelOptions: {
       codex: [{ value: "gpt-5.1-codex-mini", label: "gpt-5.1-codex-mini" }],
       claude: [{ value: "claude-sonnet-4-5", label: "claude-sonnet-4-5" }],
-      gemini: [{ value: "gemini-2.5-pro", label: "gemini-2.5-pro" }],
+      antigravity: [{ value: "gemini-3-flash", label: "gemini-3-flash" }],
     },
     onProviderChange: jest.fn(),
     onModelChange: jest.fn(),
