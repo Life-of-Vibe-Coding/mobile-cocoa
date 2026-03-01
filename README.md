@@ -13,6 +13,20 @@ Mobile Cocoa is a mobile-first intelligent coding assistant and development envi
 </p>
 <p align="center"><em>Figure 1: Mobile Cocoa in action — skill-powered chat interface.</em></p>
 
+### Why Mobile Cocoa is Great
+
+**a. Skill-Driven Development & Low-Code Intelligence**
+Mobile Cocoa utilizes a powerful skill-based architecture. It extends AI capabilities with predefined, specialized standard operating procedures ("skills" like UI/UX pro max, docker-expert, systematic-debugging, etc.). This makes it incredibly efficient at understanding complex tasks without requiring you to manually type a lot of boilerplate code from your phone.
+
+**b. Unlimited Concurrent Sessions**
+You can run as many parallel AI development sessions as possible. As long as you don't exceed your provider's rate limits/quotas, Mobile Cocoa scales with your ideas, allowing you to multi-task by spinning up distinct vibes for different components or servers simultaneously.
+
+**c. Preview of Browser**
+Tired of blind coding? Mobile Cocoa supports built-in browser previews, allowing you to see visual feedback of the web apps and UI components you and the AI are building in real-time, completely closing the feedback loop on mobile.
+
+**d. Docker Integration**
+Safety and consistency are paramount. Mobile Cocoa executes commands, sandboxes applications, and tests code within Docker containers. This means your local host environment is kept clean and safe, while providing a versatile and standardized Linux environment for the AI to work its magic.
+
 ## 2. Start Up Guide
 Getting started with Mobile Cocoa is simple. The architecture is split between a Node.js backend server and an Expo mobile application.
 
@@ -105,19 +119,6 @@ For deeper architectural insights, see the `docs/` folder:
 - **Infrastructure & Execution:** Docker containerization.
 - **AI Integration:** Integration with advanced LLMs (like Claude/Gemini) through structured session routing and session registries.
 
-## 4. Why Mobile Cocoa is Great
-
-**a. Skill-Driven Development & Low-Code Intelligence**
-Mobile Cocoa utilizes a powerful skill-based architecture. It extends AI capabilities with predefined, specialized standard operating procedures ("skills" like UI/UX pro max, docker-expert, systematic-debugging, etc.). This makes it incredibly efficient at understanding complex tasks without requiring you to manually type a lot of boilerplate code from your phone.
-
-**b. Unlimited Concurrent Sessions**
-You can run as many parallel AI development sessions as possible. As long as you don't exceed your provider's rate limits/quotas, Mobile Cocoa scales with your ideas, allowing you to multi-task by spinning up distinct vibes for different components or servers simultaneously.
-
-**c. Preview of Browser**
-Tired of blind coding? Mobile Cocoa supports built-in browser previews, allowing you to see visual feedback of the web apps and UI components you and the AI are building in real-time, completely closing the feedback loop on mobile.
-
-**d. Docker Integration**
-Safety and consistency are paramount. Mobile Cocoa executes commands, sandboxes applications, and tests code within Docker containers. This means your local host environment is kept clean and safe, while providing a versatile and standardized Linux environment for the AI to work its magic.
 ## 🤝 Contributing
 We welcome contributions of all kinds—bug fixes, features, or documentation improvements.
 
