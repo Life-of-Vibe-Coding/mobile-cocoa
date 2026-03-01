@@ -62,7 +62,7 @@ export function registerSessionsRoutes(app) {
                         provider = mapProvider(obj.provider) || provider;
                         modelId = obj.modelId;
                     }
-                    if (obj.type === "message" && obj.message?.role === "user" && firstUserInput == null) {
+                    if ((obj.type === "message" || obj.type === "message_start") && obj.message?.role === "user" && firstUserInput == null) {
                         const content = obj.message.content;
                         if (Array.isArray(content)) {
                             const textParts = content
@@ -249,6 +249,8 @@ export function registerSessionsRoutes(app) {
         const provider = normalizeProvider(payload?.provider);
         const model = payload.model;
         const prompt = typeof payload?.prompt === "string" ? payload.prompt.trim() : "";
+        // Per-session workspace: use payload.cwd if provided, otherwise fall back to global.
+        const sessionCwd = (typeof payload?.cwd === "string" && payload.cwd.trim()) ? payload.cwd.trim() : getWorkspaceCwd();
 
         if (!prompt) {
             res.status(400).json({ ok: false, error: "Prompt cannot be empty" });
@@ -270,7 +272,7 @@ export function registerSessionsRoutes(app) {
             }
             let existingPath = resolveSessionFilePath(sessionId);
             if (!existingPath) {
-                existingPath = createNewSessionFile(sessionId, getWorkspaceCwd());
+                existingPath = createNewSessionFile(sessionId, sessionCwd);
             }
             session = createSession(sessionId, provider, model, {
                 existingSessionPath: existingPath,
@@ -395,34 +397,114 @@ export function registerSessionsRoutes(app) {
             const messages = [];
             let idx = 0;
             let pendingAssistantContent = [];
+            // Accumulates text from message_update streaming deltas (e.g. Codex, Claude).
+            // These are small fragments that must be concatenated to reconstruct the full
+            // assistant message when the session file only contains streaming events so far.
+            let pendingDeltaText = "";
 
             for (const line of lines) {
                 try {
                     const obj = JSON.parse(line);
-                    if (obj.type !== "message" || !obj.message) continue;
+                    if (!obj) continue;
+
+                    // ── Handle message_update streaming deltas ───────────────
+                    // Providers like Codex stream assistant content as message_update
+                    // events with assistantMessageEvent deltas, rather than emitting
+                    // a complete message/message_end with full content.
+                    if (obj.type === "message_update" && obj.assistantMessageEvent) {
+                        const evt = obj.assistantMessageEvent;
+                        // Regular text deltas (main response content — Codex uses "text_delta")
+                        if ((evt.type === "text_delta" || evt.type === "delta") && typeof evt.delta === "string") {
+                            pendingDeltaText += evt.delta;
+                        }
+                        // Claude-style content_block_delta with nested text
+                        if (evt.type === "content_block_delta" && typeof evt.delta?.text === "string") {
+                            pendingDeltaText += evt.delta.text;
+                        }
+                        // Thinking blocks — reconstruct the <think>...</think> wrappers
+                        // to match the format the mobile eventDispatcher produces during live streaming.
+                        if (evt.type === "thinking_start") {
+                            pendingDeltaText += "<think>\n";
+                        }
+                        if (evt.type === "thinking_delta" && typeof evt.delta === "string") {
+                            pendingDeltaText += evt.delta;
+                        }
+                        if (evt.type === "thinking_end") {
+                            pendingDeltaText += "\n</think>\n\n";
+                        }
+                        continue;
+                    }
+
+                    // ── Handle standard message/message_start/message_end ────
+                    if (
+                        !["message", "message_start", "message_end"].includes(obj.type) ||
+                        !obj.message
+                    )
+                        continue;
+
                     const m = obj.message;
                     const role = m.role;
+
+                    // Ensure we only process valid roles
                     if (role !== "user" && role !== "assistant") continue;
 
-                    const content = extractMessageContent(m.content).trim();
-                    if (!content) continue;
+                    // Skip assistant message start/end/regular if content array is empty (which happens with streaming sometimes)
+                    if (role === "assistant" && (!m.content || m.content.length === 0))
+                        continue;
+
+                    // Check if there is actual content after extraction
+                    const contentStr = extractMessageContent(m.content).trim();
+                    if (!contentStr) continue;
 
                     if (role === "user") {
+                        // Flush any accumulated delta text before the user message
+                        if (pendingDeltaText) {
+                            pendingAssistantContent.push(pendingDeltaText);
+                            pendingDeltaText = "";
+                        }
+
+                        // Deduplicate identical user messages sent in the same cluster 
+                        // (from message_start, message_end, and message eventually)
+                        if (messages.length > 0) {
+                            const lastMsg = messages[messages.length - 1];
+                            if (lastMsg.role === "user" && lastMsg.content === contentStr) {
+                                continue; // Skip duplicate
+                            }
+                        }
+
+                        // A user message flushes any pending assistant chunks into a new assistant message
                         if (pendingAssistantContent.length > 0) {
                             messages.push({
                                 id: `msg-${++idx}`,
                                 role: "assistant",
                                 content: pendingAssistantContent.join("\n\n").trim(),
                             });
-                            pendingAssistantContent = [];
+                            pendingAssistantContent = []; // reset for the next assistant turn
                         }
-                        messages.push({ id: `msg-${++idx}`, role: "user", content });
+
+                        messages.push({
+                            id: `msg-${++idx}`,
+                            role: "user",
+                            content: contentStr,
+                        });
                     } else {
-                        pendingAssistantContent.push(content);
+                        // role === 'assistant'
+                        // Flush any accumulated delta text into assistant content first
+                        if (pendingDeltaText) {
+                            pendingAssistantContent.push(pendingDeltaText);
+                            pendingDeltaText = "";
+                        }
+                        pendingAssistantContent.push(contentStr);
                     }
                 } catch (_) {
                     /* skip malformed lines */
                 }
+            }
+
+            // Flush any remaining delta text
+            if (pendingDeltaText) {
+                pendingAssistantContent.push(pendingDeltaText);
+                pendingDeltaText = "";
             }
             if (pendingAssistantContent.length > 0) {
                 messages.push({
