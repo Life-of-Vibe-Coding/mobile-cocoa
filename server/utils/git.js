@@ -200,7 +200,7 @@ export function gitAdd(cwd, files) {
         .filter((file) => file.length > 0);
     if (safeFiles.length === 0) return { success: true };
 
-    execGitCmd(cwd, "add", ...safeFiles);
+    execGitCmd(cwd, "add", "--", ...safeFiles);
     return { success: true };
 }
 

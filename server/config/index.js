@@ -18,7 +18,6 @@ const projectRoot = path.resolve(__dirname, "../..");
 const MODELS_CONFIG_PATH = path.join(projectRoot, "config", "models.json");
 const PI_CONFIG_PATH = path.join(projectRoot, "config", "pi.json");
 const SKILLS_CONFIG_PATH = path.join(projectRoot, "config", "skills.json");
-export { MODELS_CONFIG_PATH, PI_CONFIG_PATH, SKILLS_CONFIG_PATH };
 const DEFAULTS_CONFIG_PATH = path.join(projectRoot, "config", "defaults.json");
 const SERVER_CONFIG_PATH = path.join(projectRoot, "config", "server.json");
 
@@ -90,11 +89,11 @@ const DEFAULT_SESSION_CONFIG = asObject(SERVER_DEFAULTS.sessions);
 
 export const LOOPBACK_HOSTS = asRequiredStringList(SERVER_DEFAULTS.loopbackHosts, "server.loopbackHosts");
 
-export const DEFAULT_PERMISSION_MODE_FROM_CONFIG = asRequiredString(
+const DEFAULT_PERMISSION_MODE_FROM_CONFIG = asRequiredString(
   SERVER_OVERRIDES.defaultPermissionMode ?? SERVER_DEFAULTS.defaultPermissionMode,
   "server.defaultPermissionMode",
 );
-export const DEFAULT_PROVIDER_FROM_CONFIG = asRequiredString(
+const DEFAULT_PROVIDER_FROM_CONFIG = asRequiredString(
   SERVER_OVERRIDES.defaultProvider ?? SERVER_DEFAULTS.defaultProvider,
   "server.defaultProvider",
 );
@@ -323,6 +322,8 @@ export function setWorkspaceCwd(newPath) {
     return { ok: false, error: err.message || "Invalid path" };
   }
 }
+
+export { MODELS_CONFIG_PATH, PI_CONFIG_PATH, SKILLS_CONFIG_PATH, DEFAULT_PERMISSION_MODE_FROM_CONFIG, DEFAULT_PROVIDER_FROM_CONFIG };
 
 // Export project paths
 export { projectRoot, __dirname };

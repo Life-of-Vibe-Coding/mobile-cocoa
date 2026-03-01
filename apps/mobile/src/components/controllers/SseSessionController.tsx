@@ -54,13 +54,19 @@ export type SseSessionControllerState = {
   handleNewSession: () => void;
 };
 
+const VALID_PROVIDERS: Provider[] = ["claude", "gemini", "codex"];
+const isValidProvider = (value: unknown): value is Provider =>
+  typeof value === "string" && VALID_PROVIDERS.includes(value as Provider);
+
 export const hydrateLastUsedProviderModel = (
   lastUsed: unknown,
   setProvider: (provider: Provider) => void,
   setModel: (model: string) => void,
 ) => {
   if (typeof lastUsed === "string") {
-    setModel(lastUsed);
+    const model = lastUsed.trim();
+    if (!model) return;
+    setModel(model);
     return;
   }
 
@@ -69,11 +75,14 @@ export const hydrateLastUsedProviderModel = (
   }
 
   const hydrated = lastUsed as Partial<{ provider: Provider; model: string }>;
-  if (typeof hydrated.provider === "string" && hydrated.provider.length > 0) {
-    setProvider(hydrated.provider);
+  if (typeof hydrated.provider === "string") {
+    const provider = hydrated.provider.trim();
+    if (isValidProvider(provider)) {
+      setProvider(provider);
+    }
   }
-  if (typeof hydrated.model === "string" && hydrated.model.length > 0) {
-    setModel(hydrated.model);
+  if (typeof hydrated.model === "string" && hydrated.model.trim().length > 0) {
+    setModel(hydrated.model.trim());
   }
 };
 

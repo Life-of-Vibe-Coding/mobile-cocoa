@@ -13,8 +13,7 @@ import {
   setSessionMessages as setSessionMessagesFromCache,
   touchSession,
 } from "./sessionCacheHelpers";
-
-type SessionToolUse = { tool_name: string; tool_input?: Record<string, unknown> };
+import type { SessionToolUse } from "./sessionCacheHelpers";
 
 export interface UseSessionCache {
   sessionStatesRef: MutableRefObject<Map<string, SessionLiveState>>;

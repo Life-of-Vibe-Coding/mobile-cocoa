@@ -100,25 +100,22 @@ describe("chat/InputPanel accessibility gate", () => {
 
   it("exposes labeled interactive controls", () => {
     const { getByLabelText } = renderPanel();
-    expect(getByLabelText("More options")).toBeTruthy();
+    expect(getByLabelText("Skill Hub")).toBeTruthy();
     expect(getByLabelText("Select model")).toBeTruthy();
-    expect(getByLabelText("Open process dashboard")).toBeTruthy();
-    expect(getByLabelText("Open web preview")).toBeTruthy();
+    expect(getByLabelText("System menu")).toBeTruthy();
     expect(getByLabelText("Send message")).toBeTruthy();
   });
 
   it("keeps minimum touch target classes on key controls", () => {
     const { getByLabelText } = renderPanel();
     const send = getByLabelText("Send message");
-    const preview = getByLabelText("Open web preview");
-    const processes = getByLabelText("Open process dashboard");
-    const more = getByLabelText("More options");
+    const menu = getByLabelText("System menu");
+    const more = getByLabelText("Skill Hub");
     const model = getByLabelText("Select model");
 
     expect(send.props.className).toContain("h-12");
-    expect(preview.props.className).toContain("h-11");
-    expect(processes.props.className).toContain("h-11");
-    expect(more.props.className).toContain("min-h-11");
+    expect(menu.props.className).toContain("min-h-11");
+    expect(more.props.className).toContain("h-11");
     expect(model.props.className).toContain("min-h-11");
   });
 });

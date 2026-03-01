@@ -1,14 +1,13 @@
 import fs from "fs";
 import path from "path";
 import { getWorkspaceCwd, SESSIONS_ROOT, VALID_PROVIDERS, DEFAULT_PROVIDER } from "../config/index.js";
+import { SESSION_FILE_VERSION, SLIM_EVENT_THRESHOLD_BYTES } from "../config/constants.js";
 import { resolveSession } from "../sessionRegistry.js";
 
-/** Version written into each new session JSONL header. Increment on schema changes. */
-const SESSION_FILE_VERSION = 3;
 /** Max characters to preview for the first user message in session listings. */
 const FIRST_USER_INPUT_MAX_LEN = 80;
 /** Byte threshold above which assistant message events are stripped during SSE replay. */
-const SLIM_REPLAY_THRESHOLD_BYTES = 2048;
+const SLIM_REPLAY_THRESHOLD_BYTES = SLIM_EVENT_THRESHOLD_BYTES;
 /** Restrictive single-segment session ID format to prevent path traversal. */
 const SAFE_SESSION_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 
@@ -133,7 +132,25 @@ export function findJsonlInDir(dir) {
 
 /** Resolve session file path. Session dir is sessions/{sessionId}. */
 export function resolveSessionFilePath(sessionId) {
-    return findJsonlInDir(getSessionDir(sessionId));
+    const validatedSessionId = assertValidSessionId(sessionId);
+    const directPath = findJsonlInDir(getSessionDir(validatedSessionId));
+    if (directPath) return directPath;
+
+    // Fallback for migrated/rekeyed session IDs:
+    // the directory can remain under the original ID while metadata/session event
+    // carries a different ID (e.g. Pi-native session id).
+    const sessionsBase = path.join(SESSIONS_ROOT, "sessions");
+    if (!fs.existsSync(sessionsBase)) return null;
+    const subdirs = fs.readdirSync(sessionsBase, { withFileTypes: true }).filter((entry) => entry.isDirectory());
+    for (const sessionDirEntry of subdirs) {
+        const filePath = findJsonlInDir(path.join(sessionsBase, sessionDirEntry.name));
+        if (!filePath) continue;
+        const fileStem = path.basename(filePath, ".jsonl");
+        if (uuidFromFileStem(fileStem) === validatedSessionId) return filePath;
+        const metadata = parseSessionMetadata(filePath);
+        if (metadata.sessionId === validatedSessionId) return filePath;
+    }
+    return null;
 }
 
 export function listDiscoveredSessions() {

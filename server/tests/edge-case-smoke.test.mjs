@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { rmSync, writeFileSync } from "node:fs";
+import { realpathSync, rmSync, writeFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
@@ -11,19 +11,18 @@ import express from "express";
 import { resolveWithinRoot, normalizeRelativePath } from "../utils/pathHelpers.js";
 import { registerWorkspaceRoutes } from "../routes/workspace.js";
 import { getPiProviderForModel } from "../process/piRpcSession.js";
-import { loadPiConfig } from "../config/index.js";
+import { getWorkspaceCwd, loadPiConfig, setWorkspaceCwd } from "../config/index.js";
 
 test("path helper rejects traversal and permits safe relative paths", () => {
-  const root = mkdtempSync(path.join(tmpdir(), "vibe-smoke-root-"));
+  const rootRaw = mkdtempSync(path.join(tmpdir(), "vibe-smoke-root-"));
+  const root = realpathSync(rootRaw);
   const safeFile = path.join(root, "safe.txt");
-  const unsafeCandidate = path.join(root, "unsafe.txt");
 
   writeFileSync(safeFile, "ok");
-  writeFileSync(unsafeCandidate, "x");
 
   const ok = resolveWithinRoot(root, "safe.txt");
   assert.equal(ok.ok, true);
-  assert.equal(ok.fullPath, safeFile);
+  assert.equal(realpathSync(ok.fullPath), realpathSync(safeFile));
 
   const escape = resolveWithinRoot(root, "../safe.txt");
   assert.equal(escape.ok, false);
@@ -38,6 +37,11 @@ test("workspace-file endpoint blocks traversal input", async () => {
   const testRoot = mkdtempSync(path.join(homedir(), "vibe-smoke-ws-"));
   const testFile = path.join(testRoot, "workspace-file.txt");
   writeFileSync(testFile, "hello");
+  const originalWorkspace = getWorkspaceCwd();
+  const result = setWorkspaceCwd(testRoot);
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
 
   const app = express();
   registerWorkspaceRoutes(app);
@@ -47,10 +51,10 @@ test("workspace-file endpoint blocks traversal input", async () => {
   try {
     const { port } = httpServer.address();
     const baseUrl = `http://127.0.0.1:${port}`;
-    const blocked = await fetch(`${baseUrl}/api/workspace-file?path=${encodeURIComponent("../" + path.basename(testFile))}&root=${encodeURIComponent(testRoot)}`);
+    const blocked = await fetch(`${baseUrl}/api/workspace-file?path=${encodeURIComponent("../" + path.basename(testFile))}`);
     assert.equal(blocked.status, 403);
 
-    const allowed = await fetch(`${baseUrl}/api/workspace-file?path=${encodeURIComponent("workspace-file.txt")}&root=${encodeURIComponent(testRoot)}`);
+    const allowed = await fetch(`${baseUrl}/api/workspace-file?path=${encodeURIComponent("workspace-file.txt")}`);
     assert.equal(allowed.status, 200);
 
     const allowedPayload = await allowed.json();
@@ -58,6 +62,7 @@ test("workspace-file endpoint blocks traversal input", async () => {
     assert.equal(allowedPayload.content, "hello");
   } finally {
     await new Promise((resolve) => httpServer.close(resolve));
+    setWorkspaceCwd(originalWorkspace);
     rmSync(testRoot, { recursive: true, force: true });
   }
 });

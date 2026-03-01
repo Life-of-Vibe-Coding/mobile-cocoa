@@ -136,7 +136,7 @@ export function createProcessManager(socket, { hasCompletedFirstRunRef, sessionM
   }
 
   function handleInput(data) {
-    piRpcSession.handleInput(data);
+    return piRpcSession.handleInput(data);
   }
 
   function handleTerminate(payload) {

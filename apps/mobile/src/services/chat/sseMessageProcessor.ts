@@ -6,7 +6,7 @@ import type { MutableRefObject } from "react";
 import type { SseMessageEvent, SessionRuntimeState } from "./hooksTypes";
 import type { StreamFlusher } from "./streamFlusher";
 import { processRawSseLine, type SseAction } from "./sseMessageParser";
-import type { LastRunOptions, PermissionDenial } from "@/core/types";
+import type { LastRunOptions } from "@/core/types";
 
 /** Safety limit for outputBufferRef to prevent RangeError from unbounded string growth. */
 export const OUTPUT_BUFFER_MAX_SIZE = 5 * 1024 * 1024;
@@ -15,7 +15,6 @@ export interface MessageProcessorContext {
   connectionSessionIdRef: { current: string };
   displayedSessionIdRef: MutableRefObject<string | null>;
   outputBufferRef: MutableRefObject<string>;
-  sawAgentEndRef: MutableRefObject<boolean>;
   lastRunOptionsRef: MutableRefObject<LastRunOptions>;
   flusher: StreamFlusher;
   dispatchProviderEvent: (data: Record<string, unknown>) => void;
@@ -36,7 +35,6 @@ export function processAction(
   const {
     connectionSessionIdRef,
     displayedSessionIdRef,
-    sawAgentEndRef,
     lastRunOptionsRef,
     flusher,
     dispatchProviderEvent,

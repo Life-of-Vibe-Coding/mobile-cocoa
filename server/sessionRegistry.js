@@ -24,6 +24,7 @@ function createSessionRecord(sessionId, provider, model, options = {}) {
 
   return {
     id: sessionId,
+    originalId: sessionId,
     subscribers: new Set(),
     provider,
     model,
@@ -36,14 +37,16 @@ function createSessionRecord(sessionId, provider, model, options = {}) {
 function matchesSessionId(sessionId, key, session) {
   if (key === sessionId) return true;
   if (key.endsWith(`${SESSION_ID_MIGRATION_PREFIX}${sessionId}`)) return true;
-  return session.id === sessionId;
+  if (session.id === sessionId) return true;
+  if (session.originalId === sessionId) return true;
+  return false;
 }
 
 function closeSessionSubscribers(session) {
   for (const res of session.subscribers) {
     try {
       res.end();
-    } catch (_) {}
+    } catch (_) { }
   }
   session.subscribers.clear();
 }
@@ -97,10 +100,10 @@ export function resolveSession(sessionId) {
  * Migrate a session to a new ID (when Pi agent emits its native session_id).
  */
 export function migrateSessionId(fromId, toId) {
-  const session = registry.get(fromId);
-  if (!session || fromId === toId) return;
+  const session = resolveSession(fromId);
+  if (!session || session.id === toId) return;
+  registry.delete(session.id);
   session.id = toId;
-  registry.delete(fromId);
   registry.set(toId, session);
 }
 
@@ -117,5 +120,8 @@ export function subscribeToSession(sessionId, res) {
   const session = resolveSession(sessionId);
   if (session) {
     session.subscribers.add(res);
+    res.on("close", () => {
+      session.subscribers.delete(res);
+    });
   }
 }

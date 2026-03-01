@@ -110,11 +110,9 @@ describe('chat/InputPanel', () => {
       />
     );
 
-    fireEvent.press(getByLabelText('More options'));
-    fireEvent.press(getByLabelText('Skill configuration'));
-
+    fireEvent.press(getByLabelText('Skill Hub'));
     await waitFor(() => {
-      expect(onOpenSkillsConfig).toHaveBeenCalledTimes(1);
+      expect(getByLabelText('Skill Hub').props.accessibilityState?.expanded).toBe(true);
     });
   });
 });

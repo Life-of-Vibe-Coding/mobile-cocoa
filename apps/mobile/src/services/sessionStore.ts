@@ -16,12 +16,20 @@ export interface LastUsedProviderModel {
 /**
  * Load the last used provider and model (for new sessions).
  */
-export async function loadLastUsedProviderModel(): Promise<LastUsedProviderModel | null> {
+export async function loadLastUsedProviderModel(): Promise<string | LastUsedProviderModel | null> {
   try {
-    const raw = await AsyncStorage.getItem(LAST_USED_PROVIDER_MODEL_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { provider?: string; model?: string };
-    if (typeof parsed?.provider === "string" && typeof parsed?.model === "string") {
+    const storedValue = await AsyncStorage.getItem(LAST_USED_PROVIDER_MODEL_KEY);
+    if (!storedValue) return null;
+    const parsed = JSON.parse(storedValue) as { provider?: string; model?: string } | string;
+    if (typeof parsed === "string" && parsed.trim().length > 0) {
+      return parsed.trim();
+    }
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      typeof parsed.provider === "string" &&
+      typeof parsed.model === "string"
+    ) {
       return { provider: parsed.provider, model: parsed.model };
     }
     return null;

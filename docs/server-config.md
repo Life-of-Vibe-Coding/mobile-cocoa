@@ -70,8 +70,5 @@ curl http://localhost:3456/api/workspace-path
 | `ENABLE_DOCKER_MANAGER` | `boolean` | Docker management flag |
 | `PI_CLI_PATH` | `string` | Path to Pi CLI binary |
 | `SESSIONS_ROOT` | `string` | Root directory for session files |
-| `MODELS_CONFIG_PATH` | `string` | Path to `config/models.json` |
-| `PI_CONFIG_PATH` | `string` | Path to `config/pi.json` |
-| `SKILLS_CONFIG_PATH` | `string` | Path to `config/skills.json` |
 | `TUNNEL_PROXY_PORT` | `number` | Dev proxy port (default `9443`) |
 | `projectRoot` | `string` | Absolute path to project root |

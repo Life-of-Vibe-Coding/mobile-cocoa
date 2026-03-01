@@ -33,7 +33,7 @@ export type StreamFlusher = {
  * @param onDebugFlush    - Optional __DEV__-only callback for perf logging.
  */
 export function createStreamFlusher(
-  onFlush: (chunk: string) => void,
+  onFlush: (chunk: string) => void | any,
   getSessionDraft: () => string,
   timerRef: { current: ReturnType<typeof setTimeout> | null },
   onDebugFlush?: (chunk: string) => void,
@@ -53,9 +53,14 @@ export function createStreamFlusher(
     const chunk = pending;
     pending = "";
     try {
-      onFlush(chunk);
+      const result = onFlush(chunk);
+      if (result instanceof Promise) {
+        result.catch((err) => {
+          console.error("[streamFlusher] onFlush async promise error", err);
+        });
+      }
     } catch (err) {
-      console.error("[streamFlusher] onFlush error", err);
+      console.error("[streamFlusher] onFlush sync error", err);
     }
     if (onDebugFlush) {
       try {
@@ -74,11 +79,18 @@ export function createStreamFlusher(
       return;
     }
     if (timerRef.current) return;
-    const draft = getSessionDraft() || "";
-    const delay =
-      draft.length + pending.length > STREAM_FLUSH_DRAFT_THRESHOLD
-        ? STREAM_FLUSH_INTERVAL_LARGE_MS
-        : STREAM_FLUSH_INTERVAL_MS;
+
+    let delay = STREAM_FLUSH_INTERVAL_MS;
+    try {
+      const draft = getSessionDraft() || "";
+      const totalLength = (draft?.length || 0) + pending.length;
+      if (totalLength > STREAM_FLUSH_DRAFT_THRESHOLD) {
+        delay = STREAM_FLUSH_INTERVAL_LARGE_MS;
+      }
+    } catch (err) {
+      console.error("[streamFlusher] getSessionDraft error", err);
+    }
+
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       flush();

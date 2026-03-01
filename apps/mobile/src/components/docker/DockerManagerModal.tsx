@@ -19,120 +19,32 @@ import {
     Platform, StyleSheet, TouchableOpacity as Pressable
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import type {
+  DockerContainer,
+  DockerImage,
+  DockerTab,
+  DockerVolume,
+} from "@/components/docker/dockerManagerModels";
+import {
+  areDockerContainersEqual,
+  areDockerImagesEqual,
+  areDockerVolumesEqual,
+  formatBytes,
+  formatDate,
+  statusClass,
+} from "@/components/docker/dockerManagerUtils";
 
-
-export type DockerTab = "containers" | "images" | "volumes";
-
-export interface DockerContainer {
-  id: string;
-  names: string[];
-  image: string;
-  status: string;
-  state: string;
-  ports: string;
-  created: string;
-}
-
-export interface DockerImage {
-  id: string;
-  repoTags: string[];
-  size: number;
-  created: string;
-}
-
-export interface DockerVolume {
-  name: string;
-  driver: string;
-  mountpoint: string;
-  created: string;
-}
+export type {
+  DockerContainer,
+  DockerImage,
+  DockerTab,
+  DockerVolume,
+} from "@/components/docker/dockerManagerModels";
 
 export interface DockerManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
   serverBaseUrl: string;
-}
-
-function areStringArraysEqual(left: string[], right: string[]): boolean {
-  if (left.length !== right.length) return false;
-  return left.every((value, index) => value === right[index]);
-}
-
-function areDockerContainersEqual(a: DockerContainer[], b: DockerContainer[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every((item, index) => {
-    const next = b[index];
-    if (!next) return false;
-    return (
-      item.id === next.id &&
-      areStringArraysEqual(item.names, next.names) &&
-      item.image === next.image &&
-      item.status === next.status &&
-      item.state === next.state &&
-      item.ports === next.ports &&
-      item.created === next.created
-    );
-  });
-}
-
-function areDockerImagesEqual(a: DockerImage[], b: DockerImage[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every((item, index) => {
-    const next = b[index];
-    if (!next) return false;
-    return (
-      item.id === next.id &&
-      areStringArraysEqual(item.repoTags, next.repoTags) &&
-      item.size === next.size &&
-      item.created === next.created
-    );
-  });
-}
-
-function areDockerVolumesEqual(a: DockerVolume[], b: DockerVolume[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every((item, index) => {
-    const next = b[index];
-    if (!next) return false;
-    return (
-      item.name === next.name &&
-      item.driver === next.driver &&
-      item.mountpoint === next.mountpoint &&
-      item.created === next.created
-    );
-  });
-}
-
-function statusClass(state: string): "running" | "exited" | "paused" | "unknown" {
-  const s = (state || "").toLowerCase();
-  if (s.includes("running")) return "running";
-  if (s.includes("exited") || s.includes("dead")) return "exited";
-  if (s.includes("paused")) return "paused";
-  return "unknown";
-}
-
-function formatDate(iso: string): string {
-  if (!iso) return "—";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
 export function DockerManagerModal({

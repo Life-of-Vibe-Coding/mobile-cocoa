@@ -1,6 +1,6 @@
 import type { Message } from "@/core/types";
 import type { SessionLiveState } from "./hooksTypes";
-import type { SessionCacheEntry, SessionToolUse } from "./sessionCacheTypes";
+import type { SessionCacheEntry } from "./sessionCacheTypes";
 import { createSessionCacheEntry } from "./sessionCacheTypes";
 
 // ── LRU Cache Eviction ───────────────────────────────────────────────────

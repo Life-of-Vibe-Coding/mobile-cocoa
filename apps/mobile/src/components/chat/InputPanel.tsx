@@ -143,7 +143,7 @@ export function InputPanel({
   const [selectedSkills, setSelectedSkills] = useState<{ id: string; name: string; category?: string }[]>([]);
 
   const categories = useMemo(() => {
-    return Array.from(new Set(enabledSkills.map(s => s.category || "Uncategorized"))).sort();
+    return Array.from(new Set(enabledSkills.map((skill) => skill.category || "Uncategorized"))).sort();
   }, [enabledSkills]);
 
   useEffect(() => {
@@ -161,13 +161,13 @@ export function InputPanel({
     if (!serverBaseUrl) return;
     setSkillsLoading(true);
     Promise.all([
-      fetch(`${serverBaseUrl}/api/skills`).then(r => r.json()),
-      fetch(`${serverBaseUrl}/api/skills-enabled`).then(r => r.json())
+      fetch(`${serverBaseUrl}/api/skills`).then((response) => response.json()),
+      fetch(`${serverBaseUrl}/api/skills-enabled`).then((response) => response.json())
     ]).then(([allData, enabledData]) => {
       const enabledSet = new Set(enabledData?.enabledIds || []);
       const allSkills = allData?.skills || [];
-      setEnabledSkills(allSkills.filter((s: any) => enabledSet.has(s.id)));
-    }).catch((err) => { console.error('[SkillHub] Failed to fetch skills:', err); }).finally(() => setSkillsLoading(false));
+      setEnabledSkills(allSkills.filter((skill: any) => enabledSet.has(skill.id)));
+    }).catch((error) => { console.error('[SkillHub] Failed to fetch skills:', error); }).finally(() => setSkillsLoading(false));
   }, [serverBaseUrl]);
 
   const sendScale = useRef(new Animated.Value(1)).current;
@@ -187,7 +187,7 @@ export function InputPanel({
   }, []);
 
   const currentModelLabel =
-    modelOptions.find((m) => m.value === model)?.label ??
+    modelOptions.find((modelOption) => modelOption.value === model)?.label ??
     (model?.startsWith("claude-") ? model.slice(7) : model ?? "");
 
   const disabled = !waitingForUserInput && sessionRunning;
@@ -208,7 +208,7 @@ export function InputPanel({
     triggerHaptic("medium");
     // Wrap prompt with <skill> tags for each selected skill
     const skillPrefix = selectedSkills.length > 0
-      ? selectedSkills.map(s => `<skill>Use ${s.name}</skill>`).join(" ") + " "
+      ? selectedSkills.map((skill) => `<skill>Use ${skill.name}</skill>`).join(" ") + " "
       : "";
     const finalPrompt = skillPrefix + trimmed;
     if (waitingForUserInput && sessionRunning) {
@@ -446,6 +446,8 @@ export function InputPanel({
                         setSkillMenuVisible(false);
                         onOpenSkillsConfig();
                       }}
+                      accessibilityLabel="Skill configuration"
+                      accessibilityRole="button"
                       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                       style={({ pressed }) => [
                         {

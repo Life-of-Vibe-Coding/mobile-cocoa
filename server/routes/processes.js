@@ -69,6 +69,10 @@ function handleKillProcess(req, res) {
   if (!pid) {
     return res.status(400).json({ error: "Missing PID" });
   }
+  // Refresh protected PID snapshot before kill checks to avoid stale/empty state.
+  try {
+    listProcessesOnPorts(getWorkspaceCwd());
+  } catch (_) {}
   if (isProtectedPid(pid)) {
     return res.status(403).json({ error: "Cannot kill a protected system process" });
   }
