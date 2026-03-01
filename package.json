@@ -25,8 +25,7 @@
   "dependencies": {
     "dockerode": "^4.0.9",
     "dotenv": "^17.3.1",
-    "express": "^4.21.2",
-    "imagetracerjs": "^1.2.6"
+    "express": "^4.21.2"
   },
   "devDependencies": {
     "eventsource": "^4.1.0",

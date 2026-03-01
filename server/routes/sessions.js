@@ -594,6 +594,29 @@ export function registerSessionsRoutes(app) {
         return line;
     }
 
+    /**
+     * Replay session history from a JSONL file to an SSE response.
+     * Skips agent lifecycle events and slims heavy content to prevent
+     * unbounded xhr.responseText growth on the mobile client.
+     * @returns {number} Number of lines replayed
+     */
+    function replayHistoryToResponse(filePath, res) {
+        if (!filePath || !fs.existsSync(filePath)) return 0;
+        try {
+            const raw = fs.readFileSync(filePath, "utf-8");
+            const lines = raw.split("\n").filter((l) => l.trim());
+            for (const line of lines) {
+                if (/\"type\"\s*:\s*\"agent_(end|start)\"/.test(line)) continue;
+                const slimmed = slimReplayLine(line);
+                res.write(`data: ${slimmed}\n\n`);
+            }
+            return lines.length;
+        } catch (e) {
+            console.error("[sessions] Failed to replay history from disk:", e?.message);
+            return 0;
+        }
+    }
+
     // GET /api/sessions/:sessionId/stream
     router.get("/:sessionId/stream", async (req, res) => {
         const sessionId = req.params.sessionId;
@@ -611,21 +634,9 @@ export function registerSessionsRoutes(app) {
             const skipReplay = req.query.skipReplay === "1" || req.query.skipReplay === "true";
             if (!skipReplay && !sessionId.startsWith("temp-")) {
                 const filePath = resolveSessionFilePath(sessionId);
-                if (filePath && fs.existsSync(filePath)) {
-                    try {
-                        const raw = fs.readFileSync(filePath, "utf-8");
-                        const lines = raw.split("\n").filter((l) => l.trim());
-                        for (const line of lines) {
-                            // Skip lifecycle events from previous turns — replaying agent_end/agent_start
-                            // confuses the client into thinking the current session has ended.
-                            if (/"type"\s*:\s*"agent_(end|start)"/.test(line)) continue;
-                            const slimmed = slimReplayLine(line);
-                            res.write(`data: ${slimmed}\n\n`);
-                        }
-                        console.log(`[SSE] sessionId=${sessionId} not in registry — replayed ${lines.length} lines from disk`);
-                    } catch (e) {
-                        console.error("[sessions] Failed to replay history for unregistered session:", e?.message);
-                    }
+                const replayed = replayHistoryToResponse(filePath, res);
+                if (replayed > 0) {
+                    console.log(`[SSE] sessionId=${sessionId} not in registry \u2014 replayed ${replayed} lines from disk`);
                 }
             }
             res.write(`event: end\ndata: {"exitCode": 0}\n\n`);
@@ -643,26 +654,11 @@ export function registerSessionsRoutes(app) {
             const filePath = session.existingSessionPath && fs.existsSync(session.existingSessionPath)
                 ? session.existingSessionPath
                 : resolveSessionFilePath(sessionId);
-            if (filePath && fs.existsSync(filePath)) {
-                try {
-                    const raw = fs.readFileSync(filePath, "utf-8");
-                    const lines = raw.split("\n").filter((l) => l.trim());
-                    for (const line of lines) {
-                        // Skip lifecycle events from previous turns — replaying agent_end/agent_start
-                        // confuses the client into thinking the current session has ended.
-                        if (/"type"\s*:\s*"agent_(end|start)"/.test(line)) continue;
-                        const slimmed = slimReplayLine(line);
-                        res.write(`data: ${slimmed}\n\n`);
-                        sentLines++;
-                    }
-                } catch (e) {
-                    console.error("[sessions] Failed to read .pi/agent/sessions for replay:", e?.message);
-                }
-            }
+            sentLines = replayHistoryToResponse(filePath, res);
         }
         if (activeOnly && !processRunning) {
             // Race: mobile connects before Pi emits agent_start. Poll briefly for process to start.
-            console.log(`[SSE][DIAG] /${sessionId}/stream: activeOnly+notRunning → entering poll loop`);
+            console.log(`[SSE][DIAG] /${sessionId}/stream: activeOnly+notRunning \u2192 entering poll loop`);
             const maxWaitMs = 6000;
             const pollMs = 150;
             const start = Date.now();

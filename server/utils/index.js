@@ -60,7 +60,6 @@ export function stripAnsi(str) {
   return str.replace(ANSI_REGEX, "");
 }
 
-
 const SKIP_DIRS = new Set([
   "node_modules", ".git", ".idea", ".vscode", "dist", "build", "out",
   ".cache", "coverage", ".nyc_output", ".expo"

@@ -191,7 +191,6 @@ export function setWorkspaceCwd(newPath) {
   return { ok: true };
 }
 
-
 // File tree refresh interval for sidebar (milliseconds)
 export const SIDEBAR_REFRESH_INTERVAL_MS = parseInt(process.env.SIDEBAR_REFRESH_INTERVAL_MS || "3000", 10) || 3000;
 
@@ -269,7 +268,6 @@ export function getLlmCliIoTurnPaths(provider, sessionId, turnId) {
     turnDir,
   };
 }
-
 
 /** Path to pi CLI binary. Defaults to "pi" (must be on PATH). */
 export const PI_CLI_PATH = process.env.PI_CLI_PATH || "pi";

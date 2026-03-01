@@ -263,29 +263,6 @@ export function setEnabledIds(agentDir, enabledIds) {
 }
 
 /**
- * Build a skill roster of ENABLED skills only. Agent sees only enabled skills.
- * When asked "what skills are you capable of", the agent lists only these.
- * @param {string} skillsDir - Absolute path to skills/
- * @param {string} agentDir - Resolved agent directory
- * @returns {string} Roster text to prepend, or "" if none enabled
- */
-export function getSkillsRoster(skillsDir, agentDir) {
-  const enabledIds = getEnabledIds(agentDir);
-  if (enabledIds.length === 0) return "";
-
-  const { skills } = discoverSkills(skillsDir);
-  const enabledSkills = skills.filter((s) => enabledIds.includes(s.id));
-  if (enabledSkills.length === 0) return "";
-
-  const lines = enabledSkills.map((s) => `- ${s.name}: ${(s.description || "").slice(0, 120)}${s.description && s.description.length > 120 ? "…" : ""}`);
-  return (
-    "[Your available skills are ONLY the following (enabled). When asked about your capabilities or skills, list ONLY these.]\n\n" +
-    lines.join("\n") +
-    "\n\n---\n\n"
-  );
-}
-
-/**
  * Sync a folder with symlinks to only the enabled skills. Used for Pi --skill loading.
  * Creates targetDir/id -> skillsDir/id for each enabled skill that exists.
  * @param {string} skillsDir - Absolute path to skills/ (from /api/skills)
@@ -341,47 +318,3 @@ export function syncEnabledSkillsFolder(skillsDir, agentDir, targetDir) {
   return paths;
 }
 
-/**
- * Load full SKILL.md content for enabled skills, for prompt injection.
- * Only loads skills that exist and are under skillsDir (security).
- * @param {string} skillsDir - Absolute path to skills/
- * @param {string} agentDir - Resolved agent directory
- * @returns {string} Combined skill content to prepend to prompt
- */
-export function loadEnabledSkillsContent(skillsDir, agentDir) {
-  const enabledIds = getEnabledIds(agentDir);
-  if (enabledIds.length === 0) return "";
-
-  const skillRoot = path.resolve(skillsDir);
-  const parts = [];
-  const seen = new Set(); // Avoid loading same skill twice if id appears in multiple forms
-
-  for (const id of enabledIds) {
-    if (!id || typeof id !== "string") continue;
-    const subdir = path.basename(id);
-    if (seen.has(subdir)) continue;
-    seen.add(subdir);
-
-    const skillPath = path.join(skillRoot, subdir, getSkillsConfigValues().skillFile);
-
-    if (!skillPath.startsWith(skillRoot)) continue;
-    if (!fs.existsSync(skillPath) || !fs.statSync(skillPath).isFile()) continue;
-
-    try {
-      const content = fs.readFileSync(skillPath, "utf8").trim();
-      if (content) parts.push(content);
-    } catch (err) {
-      console.warn("[skills] Failed to load", skillPath, err?.message);
-    }
-  }
-
-  if (parts.length === 0) return "";
-
-  return (
-    "[Enabled skills - apply ONLY when the user's message clearly matches the skill's intended use (see each skill's 'When to use' / description). " +
-    "For greetings, small talk, clarifications, or non-coding requests, respond normally without applying skill protocols. " +
-    "Do NOT run skill procedures (e.g. Environment Detection) for simple greetings or off-topic messages.]\n\n" +
-    parts.join("\n\n---\n\n") +
-    "\n\n---\n\n"
-  );
-}

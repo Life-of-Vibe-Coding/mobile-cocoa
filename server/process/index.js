@@ -178,7 +178,6 @@ export function createProcessManager(socket, { hasCompletedFirstRunRef, session_
     piRpcSession.handleInput(data);
   }
 
-
   function handleTerminate(payload) {
     const resetSession = !!payload?.resetSession;
     if (resetSession && session_management) {
@@ -189,7 +188,6 @@ export function createProcessManager(socket, { hasCompletedFirstRunRef, session_
     piRpcSession.close();
     socket.emit("exit", { exitCode: 0 });
   }
-
 
   function cleanup() {
     piRpcSession.close();
