@@ -9,11 +9,9 @@ Mobile Cocoa is a mobile-first intelligent coding assistant and development envi
 - Leverage LLM intelligence to build UI components, write full-stack code, and debug applications right from the palm of your hand.
 
 <p align="center">
-  <img src="docs/images/figure1-welcome.png" alt="Mobile Cocoa – Welcome Screen" width="280" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/images/figure2-skills.png" alt="Mobile Cocoa – Skills & Chat" width="280" />
+  <img src="docs/images/figure2-skills.png" alt="Mobile Cocoa – Skills and Chat" width="300" />
 </p>
-<p align="center"><em>Figure 1: Mobile Cocoa in action — welcome screen (left) and skill-powered chat (right).</em></p>
+<p align="center"><em>Figure 1: Mobile Cocoa in action — skill-powered chat interface.</em></p>
 
 ## 2. Start Up Guide
 Getting started with Mobile Cocoa is simple. The architecture is split between a Node.js backend server and an Expo mobile application.
