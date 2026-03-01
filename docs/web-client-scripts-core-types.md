@@ -1,17 +1,17 @@
-# Web Client Module
+# Workspace Preview Module
 
-> **Path:** [`public/app.js`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/public/app.js)
+> **Path:** [`server/routes/workspace.js`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/routes/workspace.js)
 
 ## Function
 
-Browser-based chat UI served at the root URL (`/`). Provides a simple HTML/JS interface for interacting with AI coding assistants via the server's REST+SSE API.
+Serves workspace files for non-API routes and exposes workspace browsing endpoints (`/api/workspace-*`). This replaced the older dedicated `public/app.js` chat page flow.
 
 ## Workflow
 
-1. Server serves `public/app.js` via the catch-all route
-2. Client connects to `/api/sessions/:id/stream` via EventSource for real-time output
-3. User submits prompts via the UI → `POST /api/sessions/:id/prompt`
-4. AI responses stream back and are rendered in the chat area
+1. `setupRoutes()` installs `createServeWorkspaceFileMiddleware()` as catch-all for non-API `GET` routes
+2. Middleware resolves request path relative to active workspace (`getWorkspaceCwd()`)
+3. Requests outside workspace or under blocked folders (`.git`, `.pi`) are rejected/fall through
+4. Valid files are served with MIME type from `getMimeForFile()`
 
 ## How to Use
 
@@ -19,19 +19,26 @@ Browser-based chat UI served at the root URL (`/`). Provides a simple HTML/JS in
 # Start the server
 npm start
 
-# Open in browser
-open http://localhost:3456
+# Open a workspace file directly (example)
+open "http://localhost:3456/README.md"
 ```
 
 ## How to Test
 
-Open `http://localhost:3456` and interact with the chat interface manually.
+```bash
+# Run server smoke tests (covers workspace/path guards)
+npm run smoke:server
+
+# Manual API checks
+curl "http://localhost:3456/api/workspace-tree"
+curl "http://localhost:3456/api/workspace-file?path=package.json"
+```
 
 ---
 
 # Health Check Module
 
-> **Path:** [`public/health-check.html`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/public/health-check.html) + [`public/health-check.js`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/public/health-check.js)
+> **Path:** [`server/public/health-check.html`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/public/health-check.html) + [`server/public/health-check.js`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/public/health-check.js)
 
 ## Function
 
@@ -47,7 +54,7 @@ open http://localhost:3456/health
 
 # Docker Dashboard Module
 
-> **Path:** [`public/docker.html`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/public/docker.html) + [`public/docker.js`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/public/docker.js)
+> **Path:** [`server/public/docker.html`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/public/docker.html) + [`server/public/docker.js`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/public/docker.js)
 
 ## Function
 
@@ -62,36 +69,31 @@ open http://localhost:3456/docker
 
 ---
 
-# Scripts Module
+# Server Scripts & Tests Module
 
-> **Path:** [`scripts/`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/scripts/)
+> **Path:** [`server/scripts/`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/scripts/) + [`server/tests/`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/tests/)
 
 ## Function
 
-Development and testing scripts for the server.
+Operational scripts for tunnel/dev orchestration and Node test suites for smoke + regression coverage.
 
-## Scripts
+## Scripts and Tests
 
-| Script | Description | Usage |
-|--------|-------------|-------|
-| [`smoke-pi-rpc-sse-session-switch.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/scripts/smoke-pi-rpc-sse-session-switch.mjs) | Smoke test: creates sessions, submits prompts, verifies SSE streaming, tests session switching | `RAPID_MODE=1 node scripts/smoke-pi-rpc-sse-session-switch.mjs` |
-| [`smoke-session-folder.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/scripts/smoke-session-folder.mjs) | Smoke test: verifies session folder structure and JSONL persistence | `node scripts/smoke-session-folder.mjs` |
-| [`load-test-codex-multi-session.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/scripts/load-test-codex-multi-session.mjs) | Load test: creates and drives multiple concurrent sessions | `node scripts/load-test-codex-multi-session.mjs` |
-| [`start-cloudflare-tunnel.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/scripts/start-cloudflare-tunnel.mjs) | Starts a Cloudflare Tunnel pointing to the proxy | `node scripts/start-cloudflare-tunnel.mjs` |
-| [`start-dev-cloudflare.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/scripts/start-dev-cloudflare.mjs) | Starts proxy + dev server + Cloudflare Tunnel in parallel | `npm run dev:cloudflare` |
+| File | Description | Usage |
+|------|-------------|-------|
+| [`start-cloudflare-tunnel.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/scripts/start-cloudflare-tunnel.mjs) | Starts a Cloudflare Tunnel for local server/proxy | `npm run cloudflare:tunnel` |
+| [`start-dev-cloudflare.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/scripts/start-dev-cloudflare.mjs) | Starts server + proxy + tunnel workflow | `npm run dev:cloudflare` |
+| [`edge-case-smoke.test.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/tests/edge-case-smoke.test.mjs) | Smoke tests for path guards and config edge cases | `npm run smoke:server` |
+| [`regression-fixes.test.mjs`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/tests/regression-fixes.test.mjs) | Regression tests for session lifecycle, process protection, and git edge cases | `node --test ./server/tests/regression-fixes.test.mjs` |
 
 ## How to Test
 
 ```bash
-# Primary smoke test
-RAPID_MODE=1 node scripts/smoke-pi-rpc-sse-session-switch.mjs
+# Primary smoke suite
+npm run smoke:server
 
-# Session persistence test
-node scripts/smoke-session-folder.mjs
-
-# Load test (requires server running)
-npm start &
-node scripts/load-test-codex-multi-session.mjs
+# Extended regression suite
+node --test ./server/tests/regression-fixes.test.mjs
 ```
 
 ---

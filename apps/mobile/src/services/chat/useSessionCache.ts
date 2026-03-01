@@ -1,5 +1,5 @@
 import type { PermissionDenial, Message } from "@/core/types";
-import { useCallback, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import { useCallback, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import { deduplicateDenials as deduplicateDenialsUtil, deduplicateMessageIds as deduplicateMessageIdsUtil, getMaxMessageId } from "./hooksUtils";
 import type { SseEventHandlers } from "./sseConnection";
 import type { EventSourceLike, SessionLiveState, SessionRuntimeState } from "./hooksTypes";
@@ -47,6 +47,7 @@ export interface UseSessionCache {
   getConnectionIntent: (sessionId: string | null) => boolean | undefined;
   setConnectionIntent: (sessionId: string | null, shouldConnect: boolean) => void;
   clearConnectionIntent: (sessionId: string | null) => void;
+  connectionIntentVersion: number;
   setCurrentSessionId: (sessionId: string | null) => void;
   closeActiveSse: (reason?: string) => void;
   evictOldestSessions: (activeSessionId?: string | null) => void;
@@ -90,6 +91,10 @@ export function useSessionCache({
   const sessionMessagesRef = useRef<Map<string, Message[]>>(new Map());
   const sessionDraftRef = useRef<Map<string, string>>(new Map());
   const toolUseByIdRef = useRef<Map<string, SessionToolUse>>(new Map());
+
+  // Version counter that increments when setConnectionIntent(sessionId, true) is called.
+  // This triggers re-renders so the SSE lifecycle effect re-runs for subsequent prompts.
+  const [connectionIntentVersion, setConnectionIntentVersion] = useState(0);
 
   const recordToolUseRef = useRef<(id: string, data: SessionToolUse) => void>(() => {});
   const getAndClearToolUseRef = useRef<(id: string) => SessionToolUse | null>((_) => null);
@@ -177,6 +182,8 @@ export function useSessionCache({
     if (!sessionId) return;
     if (shouldConnect) {
       connectionIntentBySessionRef.current.set(sessionId, true);
+      // Increment version to trigger re-render so the SSE lifecycle effect re-runs
+      setConnectionIntentVersion((v) => v + 1);
       return;
     }
     connectionIntentBySessionRef.current.delete(sessionId);
@@ -221,6 +228,10 @@ export function useSessionCache({
       if (streamFlushTimeoutRef.current) {
         clearTimeout(streamFlushTimeoutRef.current);
         streamFlushTimeoutRef.current = null;
+      }
+      const selectedSessionRuntime = selectedSessionRuntimeRef.current;
+      if (selectedSessionRuntime?.id === id) {
+        selectedSessionRuntimeRef.current = { ...selectedSessionRuntime, running: false };
       }
       clearConnectionIntent(id);
       toolUseByIdRef.current.clear();
@@ -328,6 +339,7 @@ export function useSessionCache({
     getConnectionIntent,
     setConnectionIntent,
     clearConnectionIntent,
+    connectionIntentVersion,
     setCurrentSessionId,
     closeActiveSse,
     evictOldestSessions,

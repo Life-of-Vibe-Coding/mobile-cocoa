@@ -90,9 +90,9 @@ Configures skill discovery and categorization.
 
 | Field | Description |
 |-------|-------------|
-| `skillsLibraryDir` | Directory containing skills (`server/skills-library`) |
-| `skillsEnabledFile` | Enabled skills record (`server/skills-enabled.json`) |
-| `skillsEnabledDir` | Symlinked enabled skills dir (`server/skills_enabled`) |
+| `skillsLibraryDir` | Directory containing skills (`server/skills/library`) |
+| `skillsEnabledFile` | Enabled skills record (`server/skills/enabled.json`) |
+| `skillsEnabledDir` | Symlinked enabled skills dir (`server/skills/enabled`) |
 | `skillFileName` | Skill file name pattern (`SKILL.md`) |
 | `defaultCategory` | Category for uncategorized skills (`Development`) |
 | `categories` | Skill ID → category mapping |

@@ -54,11 +54,11 @@ pm.handleSubmitPrompt(payload, "localhost:3456");
 ## How to Test
 
 ```bash
-# Smoke test (SSE session switching)
-RAPID_MODE=1 node scripts/smoke-pi-rpc-sse-session-switch.mjs
+# Smoke test
+npm run smoke:server
 
-# Load test (multi-session)
-node scripts/load-test-codex-multi-session.mjs
+# Regression suite (session lifecycle + process protections)
+node --test ./server/tests/regression-fixes.test.mjs
 ```
 
 ## API (Manager Interface)
@@ -137,8 +137,11 @@ session.close();
 ## How to Test
 
 ```bash
-# Smoke test verifies Pi RPC + SSE session switching end-to-end
-RAPID_MODE=1 node scripts/smoke-pi-rpc-sse-session-switch.mjs
+# Smoke test verifies Pi RPC route safety and path guards
+npm run smoke:server
+
+# Broader regression coverage for session/process behavior
+node --test ./server/tests/regression-fixes.test.mjs
 ```
 
 ## API (Session Interface)

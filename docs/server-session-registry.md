@@ -10,7 +10,7 @@ Global in-memory registry mapping `sessionId → session state`. Manages the lif
 
 1. Client creates a session via `POST /api/sessions` → `createSession()` is called
 2. A `processManager` is created (one Pi RPC process per session)
-3. SSE subscribers are added/removed as clients connect/disconnect via `/api/sessions/:id/stream`
+3. SSE subscribers are added/removed as clients connect/disconnect via `/api/sessions/:sessionId/stream`
 4. When Pi emits a native session ID, `migrateSessionId()` re-keys the registry entry
 5. On session delete, `removeSession()` cleans up the process and closes all SSE connections
 
@@ -63,7 +63,10 @@ removeSession("abc-123");
 
 ```bash
 # Smoke test covers session creation, streaming, and cleanup
-RAPID_MODE=1 node scripts/smoke-pi-rpc-sse-session-switch.mjs
+npm run smoke:server
+
+# Regression suite covers rekeying + delete semantics
+node --test ./server/tests/regression-fixes.test.mjs
 ```
 
 ## API

@@ -16,7 +16,6 @@ Shared utility functions used across the server: preview/overlay resolution, wor
 |----------|-------------|
 | `getPreviewHost()` | Resolves preview host for system prompt injection. Priority: `PREVIEW_HOST` env → tunnel proxy marker → `"(not set)"` |
 | `getActiveOverlay()` | Returns `"tunnel"` or `"none"` |
-| `killProcessOnPort(port)` | Kills any process on a port (via `lsof`/`kill`) |
 | `buildWorkspaceTree(dirPath, basePath)` | Recursive directory listing as JSON tree. Skips `node_modules`, `.git`, `dist`, etc. |
 | `IMAGE_EXT` | Set of image extensions |
 | `MAX_TEXT_FILE_BYTES` | 500KB limit for file viewer |
@@ -26,6 +25,7 @@ Shared utility functions used across the server: preview/overlay resolution, wor
 | Function | Description |
 |----------|-------------|
 | `normalizeRelativePath(relPath)` | Strips directory traversal (`../`) and normalizes |
+| `isInsideRoot(rootDir, targetPath)` | Checks whether a path stays inside a root directory |
 | `resolveWithinRoot(rootDir, relativePath)` | Checks path stays within root. Returns `{ ok, fullPath, error }` |
 | `getMimeForFile(filename)` | Maps extension to MIME type (html, css, js) |
 
@@ -45,13 +45,11 @@ Shared utility functions used across the server: preview/overlay resolution, wor
 
 | Function | Description |
 |----------|-------------|
-| `listProcessesOnPorts(workspacePath)` | Finds processes on dev ports (3000–9999) via `lsof`/`ps` |
+| `listProcessesOnPorts(workspacePath)` | Finds processes on common dev ports and marks protected app ports |
 | `killProcess(pid)` | Sends SIGTERM to a process |
 | `isProtectedPid(pid)` | Checks if PID is on a protected port |
-| `getLogFilesFromProcess(pid)` | Extracts log file paths from process fd via `lsof` |
 | `getLogTail(absPath, workspacePath, lines)` | Reads last N lines of a log file |
 | `getLogTailByName(workspacePath, name, lines)` | Finds log by filename and returns tail |
-| `findLogFile(workspacePath, name)` | Searches workspace for a log file by name |
 
 ## How to Use
 

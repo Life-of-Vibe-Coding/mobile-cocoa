@@ -86,6 +86,12 @@ export function applySubmitSuccess(
   // Skip JSONL replay so previous turns' message_update events aren't re-processed.
   skipReplayForSessionRef.current = newSessionId;
   setConnectionIntent(newSessionId, true);
+  if (__DEV__) {
+    console.log("[sse][DIAG] submit success -> connection intent enabled", {
+      sessionId: newSessionId,
+      previousSessionId: sessionId,
+    });
+  }
   touchSession(newSessionId);
   evictOldestSessions(newSessionId);
   if (!sessionId || sessionId !== newSessionId) {

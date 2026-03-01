@@ -93,6 +93,7 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
     getAndClearToolUseRef,
     addPermissionDenialRef,
     deduplicateDenialsRef,
+    connectionIntentVersion,
   } = sessionCache;
 
   // Derive a primitive boolean for the target session's running status.
@@ -108,6 +109,15 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
   const isTargetSessionRunning = hasRuntimeRecordForTarget
     ? isTargetSessionRunningFromRuntime
     : isTargetSessionRunningFromStore;
+  const targetSessionIntent = getConnectionIntent(storeSessionId);
+  // Only allow SSE connection when:
+  // 1. Intent is explicitly set to true (from submit/retry), OR
+  // 2. Intent is undefined AND runtime says running (for reconnection after app resume)
+  // Do NOT connect when intent was cleared (after stream end) even if store says running,
+  // because the store polling might not have caught up yet.
+  const targetSessionRunning = storeSessionId
+    ? (targetSessionIntent === true || (targetSessionIntent === undefined && isTargetSessionRunningFromRuntime))
+    : false;
   const streamFlushPerfRef = useRef({
     flushCount: 0,
     totalChars: 0,
@@ -179,10 +189,6 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
 
   useEffect(() => {
     const targetSessionId = storeSessionId;
-    const targetSessionIntent = getConnectionIntent(targetSessionId);
-    const targetSessionRunning = targetSessionId
-      ? (targetSessionIntent ?? isTargetSessionRunning)
-      : false;
 
     if (!targetSessionId || !targetSessionRunning) {
       closeActiveSse("inactive");
@@ -606,7 +612,8 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
     getOrCreateSessionState,
     refreshCurrentSessionFromDisk,
     setSessionStateForSession,
-    getConnectionIntent,
+    targetSessionIntent,
+    targetSessionRunning,
     isTargetSessionRunning,
     storeSessionId,
     serverUrl,
@@ -622,6 +629,7 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
     setPermissionDenials,
     setPendingAskQuestion,
     setLastSessionTerminated,
+    connectionIntentVersion,
   ]);
 
   // ── Secondary effects ─────────────────────────────────────────────────────

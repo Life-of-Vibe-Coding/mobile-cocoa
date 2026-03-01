@@ -9,10 +9,10 @@ Core state management for the mobile chat UI. Manages SSE connections, message s
 ## Workflow
 
 1. `useChat()` is the main hook consumed by chat screens
-2. On session start, `useChatStreamingLifecycle` opens an `EventSource` to `/api/sessions/:id/stream`
+2. On session start, `useChatStreamingLifecycle` opens an `EventSource` to `/api/sessions/:sessionId/stream`
 3. SSE events are parsed and dispatched via the provider event dispatcher
 4. Messages are accumulated in per-session caches with LRU eviction
-5. `useChatActions` provides `submitPrompt`, `sendInput`, `terminate`, `switchSession`
+5. `useChatActions` provides `submitPrompt`, `submitAskQuestionAnswer`, `terminateAgent`, `resetSession`, `startNewSession`
 6. `useChatExternalCallbacks` handles side effects (agent notifications, session persistence)
 
 ---
@@ -26,17 +26,17 @@ Core state management for the mobile chat UI. Manages SSE connections, message s
 | `useChat(options?)` | Main hook — returns messages, session state, actions, permissions, connection status |
 
 **Returns:**
-- `messages: Message[]` — Current session messages
 - `sessionRunning: boolean` — Whether AI is generating
-- `waitingForUserInput: boolean` — Whether approval is needed
-- `provider: string` — Current provider
-- `model: string` — Current model
+- `sessionId: string | null` — Active session ID
 - `submitPrompt(prompt, opts?)` — Send a prompt
-- `sendInput(text)` — Send approval/text input
-- `terminate()` — Kill running session
-- `switchSession(id)` — Switch to another session
-- `permissionDenials` — Current denials
-- `pendingAskQuestion` — Pending AskUserQuestion modal data
+- `submitAskQuestionAnswer(answers)` — Send AskUserQuestion answers
+- `dismissAskQuestion()` — Clear pending AskUserQuestion modal
+- `retryAfterPermission(...)` — Retry last run with updated permission options
+- `dismissPermission()` — Clear permission denials state
+- `terminateAgent()` — Kill running session process
+- `resetSession()` — Reset session state and terminate active server session if needed
+- `startNewSession()` — Reset local chat state and start a fresh session flow
+- `loadSession(messages, sessionId?, statusHint?)` — Load/reseed a session from stored messages
 
 ### [`useChatStreamingLifecycle.ts`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/apps/mobile/src/services/chat/useChatStreamingLifecycle.ts) — SSE Connection
 
@@ -52,12 +52,12 @@ Core state management for the mobile chat UI. Manages SSE connections, message s
 
 | Function | Description |
 |----------|-------------|
-| `submitPrompt(prompt, opts?)` | POST to `/api/sessions/:id/prompt`, opens SSE stream |
-| `sendInput(text)` | POST to `/api/sessions/:id/input` (approval answers) |
-| `sendAskUserQuestionAnswer(answers)` | Sends structured AskUserQuestion response |
-| `terminate()` | POST to `/api/sessions/:id/terminate` |
-| `switchSession(id)` | Changes active session, loads cached or replays from server |
-| `createNewSession(provider, model)` | POST to `/api/sessions` |
+| `submitPrompt(prompt, opts?)` | POST to `/api/sessions` with prompt/provider/model/session metadata |
+| `submitAskQuestionAnswer(answers)` | POST to `/api/sessions/:sessionId/input` with structured tool_result payload |
+| `retryAfterPermission(...)` | Re-submits prompt with adjusted permission mode/allowed tools |
+| `terminateAgent()` | POST to `/api/sessions/:sessionId/terminate` |
+| `resetSession()` | Terminates server session (if active) and resets local state |
+| `startNewSession()` | Local reset that disconnects SSE but keeps prior server session running |
 
 ### [`sessionMessageHandlers.ts`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/apps/mobile/src/services/chat/sessionMessageHandlers.ts) — Message State
 

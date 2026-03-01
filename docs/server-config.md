@@ -4,14 +4,13 @@
 
 ## Function
 
-Centralizes all server configuration: environment variables, workspace resolution, logging paths, external config loading (models, Pi, skills), and overlay/tunnel settings.
+Centralizes all server configuration: environment variables, workspace resolution, external config loading (models, Pi, skills), and overlay/tunnel settings.
 
 ## Workflow
 
 1. On import, resolves workspace directory from CLI args or env vars
 2. Loads external JSON configs (`config/models.json`, `config/pi.json`, `config/skills.json`) from disk on demand
-3. Creates log directories for LLM CLI I/O debug traces
-4. Exports constants and getter/setter functions consumed by all other server modules
+3. Exports constants and getter/setter functions consumed by other server modules
 
 ## Key Functions
 
@@ -47,7 +46,7 @@ if (!result.ok) console.error(result.error);
 
 ## How to Test
 
-No dedicated test file exists. Verify by:
+Verify both API behavior and config-sensitive tests:
 
 ```bash
 # Start server and check config endpoint
@@ -55,6 +54,9 @@ npm start
 curl http://localhost:3456/api/config
 curl http://localhost:3456/api/models
 curl http://localhost:3456/api/workspace-path
+
+# Config/path safety smoke test
+npm run smoke:server
 ```
 
 ## API (Exported Constants)
@@ -62,13 +64,13 @@ curl http://localhost:3456/api/workspace-path
 | Export | Type | Description |
 |--------|------|-------------|
 | `PORT` | `number` | Server port (default `3456`) |
-| `WORKSPACE_CWD` | `string` | Initial workspace directory |
 | `WORKSPACE_ALLOWED_ROOT` | `string` | Root path for allowed workspace switching |
 | `SIDEBAR_REFRESH_INTERVAL_MS` | `number` | File tree refresh interval (default `3000`) |
-| `DEFAULT_PROVIDER` | `string` | Default AI provider (`gemini`) |
+| `DEFAULT_PROVIDER` | `string` | Default AI provider (from config, currently `codex`) |
 | `DEFAULT_PERMISSION_MODE` | `string` | Claude permission mode (`bypassPermissions`) |
 | `ENABLE_DOCKER_MANAGER` | `boolean` | Docker management flag |
 | `PI_CLI_PATH` | `string` | Path to Pi CLI binary |
 | `SESSIONS_ROOT` | `string` | Root directory for session files |
 | `TUNNEL_PROXY_PORT` | `number` | Dev proxy port (default `9443`) |
+| `DEFAULT_SERVER_URL` | `string` | Default mobile server URL (`http://localhost:3456`) |
 | `projectRoot` | `string` | Absolute path to project root |

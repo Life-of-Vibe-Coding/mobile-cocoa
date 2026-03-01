@@ -394,6 +394,11 @@ export function useChatActions(params: UseChatActionsParams) {
     lastRunOptionsRef.current = { permissionMode: null, allowedTools: [], useContinue: false };
     setPendingAskQuestion(null);
     setLastSessionTerminated(false);
+    setWaitingForUserInput(false);
+    // Reset session running state so the input is editable in the new session.
+    // Without this, the previous session's "running" state leaks into the new
+    // session and the text input stays disabled.
+    setSessionStateForSession(null, "idle");
     if (sessionId) setSessionDraft(sessionId, "");
   }, [
     closeActiveSse,
@@ -407,6 +412,8 @@ export function useChatActions(params: UseChatActionsParams) {
     setLastSessionTerminated,
     setSessionDraft,
     setSessionId,
+    setWaitingForUserInput,
+    setSessionStateForSession,
   ]);
 
   return {
