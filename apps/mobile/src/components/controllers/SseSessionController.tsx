@@ -54,6 +54,29 @@ export type SseSessionControllerState = {
   handleNewSession: () => void;
 };
 
+export const hydrateLastUsedProviderModel = (
+  lastUsed: unknown,
+  setProvider: (provider: Provider) => void,
+  setModel: (model: string) => void,
+) => {
+  if (typeof lastUsed === "string") {
+    setModel(lastUsed);
+    return;
+  }
+
+  if (!lastUsed || typeof lastUsed !== "object") {
+    return;
+  }
+
+  const hydrated = lastUsed as Partial<{ provider: Provider; model: string }>;
+  if (typeof hydrated.provider === "string" && hydrated.provider.length > 0) {
+    setProvider(hydrated.provider);
+  }
+  if (typeof hydrated.model === "string" && hydrated.model.length > 0) {
+    setModel(hydrated.model);
+  }
+};
+
 export const SseSessionController = memo(function SseSessionController({
   provider,
   model,
@@ -115,22 +138,7 @@ export const SseSessionController = memo(function SseSessionController({
     hasRestoredProviderModel.current = true;
     sessionStore
       .loadLastUsedProviderModel()
-      .then((lastUsed) => {
-        if (typeof lastUsed === "string") {
-          setModel(lastUsed);
-          return;
-        }
-        if (!lastUsed || typeof lastUsed !== "object") {
-          return;
-        }
-        const hydrated = lastUsed as Partial<{ provider: Provider; model: string }>;
-        if (typeof hydrated.provider === "string" && hydrated.provider.length > 0) {
-          setProvider(hydrated.provider);
-        }
-        if (typeof hydrated.model === "string" && hydrated.model.length > 0) {
-          setModel(hydrated.model);
-        }
-      })
+      .then((lastUsed) => hydrateLastUsedProviderModel(lastUsed, setProvider, setModel))
       .catch(() => {
         // Ignore restore failures.
       });

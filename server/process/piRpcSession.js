@@ -27,7 +27,6 @@ import { getActiveOverlay, getPreviewHost } from "../utils/index.js";
 
 /** Byte threshold above which assistant message SSE events are stripped to prevent unbounded responseText growth. */
 const SLIM_SSE_THRESHOLD_BYTES = 2048;
-
 function isLoopbackHost(rawHost) {
   const host = String(rawHost || "").toLowerCase();
   if (!host) return false;
@@ -95,7 +94,7 @@ function getConnectionContext(socket) {
  *   - anthropic           → claude-*
  *   - openai              → gpt-*, codex-*
  */
-function getPiProviderForModel(clientProvider, model) {
+export function getPiProviderForModel(clientProvider, model) {
   const piConfig = loadPiConfig();
   const routing = piConfig.providerRouting ?? {};
   const rules = routing.rules ?? [];

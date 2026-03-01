@@ -35,6 +35,7 @@ const DEFAULT_SESSION_MODEL = DEFAULT_PROVIDER_MODELS?.[DEFAULT_SESSION_PROVIDER
 const SSE_PROCESS_START_WAIT_MS = 6_000;
 /** Interval in ms to poll for process start during active-only SSE connections. */
 const SSE_PROCESS_START_POLL_MS = 150;
+const TRUE_VALUES = new Set(["1", "true"]);
 
 const WORKSPACE_ALLOWED_ROOT_REAL = (() => {
     try {
@@ -47,6 +48,67 @@ const WORKSPACE_ALLOWED_ROOT_REAL = (() => {
 function isInsideRoot(rootDir, targetPath) {
     const rel = path.relative(rootDir, targetPath);
     return rel === "" || (!rel.startsWith(`..${path.sep}`) && rel !== ".." && !path.isAbsolute(rel));
+}
+
+function isTempSessionId(sessionId) {
+    return typeof sessionId === "string" && sessionId.startsWith("temp-");
+}
+
+function parseBooleanQueryParam(rawValue) {
+    return TRUE_VALUES.has(String(rawValue ?? ""));
+}
+
+function normalizeStringOrNull(value) {
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function resolveSessionCwdForStatus(record) {
+    return normalizeStringOrNull(record?.cwd);
+}
+
+function resolveSessionCwdForList(record, workspaceCwd) {
+    return (
+        normalizeStringOrNull(record?.cwd) ||
+        normalizeStringOrNull(deriveCwdFromFilePath(record.filePath)) ||
+        workspaceCwd
+    );
+}
+
+function createStatusSessionRecord(record, now) {
+    const running = resolveSessionRunning(record, now);
+    return {
+        id: record.id,
+        cwd: resolveSessionCwdForStatus(record),
+        model: record.modelId || null,
+        lastAccess: record.mtimeMs,
+        status: running ? "running" : "idling",
+        title: record.firstUserInput || "(no input)",
+    };
+}
+
+function createListSessionRecord(record, now, workspaceCwd) {
+    const running = resolveSessionRunning(record, now);
+    return {
+        id: record.id,
+        fileStem: record.fileStem,
+        firstUserInput: record.firstUserInput || "(no input)",
+        provider: record.provider || null,
+        model: record.modelId || null,
+        mtime: record.mtimeMs,
+        sseConnected: record.activeSession ? record.activeSession.subscribers?.size > 0 : false,
+        running,
+        cwd: resolveSessionCwdForList(record, workspaceCwd),
+    };
+}
+
+function resolveWorkspacePathForDestroy(rawPath) {
+    const trimmed = normalizeStringOrNull(rawPath) || getWorkspaceCwd();
+    const targetPathInput = path.resolve(trimmed);
+    try {
+        return fs.realpathSync(targetPathInput);
+    } catch {
+        return targetPathInput;
+    }
 }
 
 function requireValidSessionIdParam(req, res) {
@@ -158,15 +220,7 @@ export function registerSessionsRoutes(app) {
 
             const now = Date.now();
             for (const record of records) {
-                const running = resolveSessionRunning(record, now);
-                discovered.push({
-                    id: record.id,
-                    cwd: (typeof record.cwd === "string" && record.cwd.trim()) ? record.cwd : null,
-                    model: record.modelId || null,
-                    lastAccess: record.mtimeMs,
-                    status: running ? "running" : "idling",
-                    title: record.firstUserInput || "(no input)",
-                });
+                discovered.push(createStatusSessionRecord(record, now));
             }
         } catch (error) {
             console.error("[sessions] Failed to list .pi/agent/sessions for status:", error?.message);
@@ -196,22 +250,7 @@ export function registerSessionsRoutes(app) {
 
             const now = Date.now();
             for (const record of records) {
-                const sseConnected = record.activeSession ? record.activeSession.subscribers?.size > 0 : false;
-                const running = resolveSessionRunning(record, now);
-                const resolvedCwd = (typeof record.cwd === "string" && record.cwd.trim())
-                    ? record.cwd
-                    : (deriveCwdFromFilePath(record.filePath) || getWorkspaceCwd());
-                discovered.push({
-                    id: record.id,
-                    fileStem: record.fileStem,
-                    firstUserInput: record.firstUserInput || "(no input)",
-                    provider: record.provider || null,
-                    model: record.modelId || null,
-                    mtime: record.mtimeMs,
-                    sseConnected,
-                    running,
-                    cwd: resolvedCwd || getWorkspaceCwd(),
-                });
+                discovered.push(createListSessionRecord(record, now, getWorkspaceCwd()));
             }
         } catch (error) {
             console.error("[sessions] Failed to list .pi/agent/sessions:", error?.message);
@@ -254,16 +293,7 @@ export function registerSessionsRoutes(app) {
     // POST /api/sessions/destroy-workspace - Delete all sessions for a workspace (and their session folders)
     router.post("/destroy-workspace", (req, res) => {
         const rawPath = req.body?.path ?? req.query?.path;
-        const targetPathInput = (typeof rawPath === "string" && rawPath.trim())
-            ? path.resolve(rawPath.trim())
-            : getWorkspaceCwd();
-        const targetPath = (() => {
-            try {
-                return fs.realpathSync(targetPathInput);
-            } catch {
-                return targetPathInput;
-            }
-        })();
+        const targetPath = resolveWorkspacePathForDestroy(rawPath);
         if (!isInsideRoot(WORKSPACE_ALLOWED_ROOT_REAL, targetPath)) {
             return res.status(400).json({ error: "Path must be under allowed root" });
         }
@@ -405,8 +435,8 @@ export function registerSessionsRoutes(app) {
         if (!session) {
             // Session not in registry (e.g. server restarted). Try to replay history from disk
             // before closing the connection so the client can restore its message history.
-            const skipReplay = req.query.skipReplay === "1" || req.query.skipReplay === "true";
-            if (!skipReplay && !sessionId.startsWith("temp-")) {
+            const skipReplay = parseBooleanQueryParam(req.query.skipReplay);
+            if (!skipReplay && !isTempSessionId(sessionId)) {
                 const filePath = resolveSessionFilePath(sessionId);
                 replayHistoryToResponse(filePath, res);
             }
@@ -415,11 +445,11 @@ export function registerSessionsRoutes(app) {
             return;
         }
 
-        const activeOnly = req.query.activeOnly === "1" || req.query.activeOnly === "true";
-        const skipReplay = req.query.skipReplay === "1" || req.query.skipReplay === "true";
+            const activeOnly = parseBooleanQueryParam(req.query.activeOnly);
+            const skipReplay = parseBooleanQueryParam(req.query.skipReplay);
         const processRunning = session.processManager.processRunning?.() || false;
         // Replay history from disk unless client already has it (skipReplay=1 when resuming with preseeded messages)
-        if (!skipReplay && !sessionId.startsWith("temp-")) {
+        if (!skipReplay && !isTempSessionId(sessionId)) {
             const filePath = session.existingSessionPath && fs.existsSync(session.existingSessionPath)
                 ? session.existingSessionPath
                 : resolveSessionFilePath(sessionId);

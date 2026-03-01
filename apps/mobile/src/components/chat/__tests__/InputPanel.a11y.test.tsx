@@ -70,7 +70,6 @@ function renderPanel() {
       sessionRunning={false}
       waitingForUserInput={false}
       permissionMode="default"
-      onPermissionModeChange={jest.fn()}
       onSubmit={jest.fn()}
       pendingCodeRefs={[]}
       onRemoveCodeRef={jest.fn()}
@@ -80,13 +79,6 @@ function renderPanel() {
       provider="codex"
       model="gpt-5.1-codex-mini"
       modelOptions={[{ value: "gpt-5.1-codex-mini", label: "gpt-5.1-codex-mini" }]}
-      providerModelOptions={{
-        codex: [{ value: "gpt-5.1-codex-mini", label: "gpt-5.1-codex-mini" }],
-        claude: [{ value: "claude-sonnet-4-5", label: "claude-sonnet-4-5" }],
-        gemini: [{ value: "gemini-3-flash", label: "gemini-3-flash" }],
-      }}
-      onProviderChange={jest.fn()}
-      onModelChange={jest.fn()}
       onOpenModelPicker={jest.fn()}
       onOpenSkillsConfig={jest.fn()}
       onOpenDocker={jest.fn()}

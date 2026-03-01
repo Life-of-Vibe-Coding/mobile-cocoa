@@ -84,7 +84,6 @@ describe('chat/InputPanel', () => {
         sessionRunning={false}
         waitingForUserInput={false}
         permissionMode={null}
-        onPermissionModeChange={jest.fn()}
         onSubmit={onSubmit}
       />
     );
@@ -106,7 +105,6 @@ describe('chat/InputPanel', () => {
         sessionRunning={false}
         waitingForUserInput={false}
         permissionMode={null}
-        onPermissionModeChange={jest.fn()}
         onSubmit={jest.fn()}
         onOpenSkillsConfig={onOpenSkillsConfig}
       />

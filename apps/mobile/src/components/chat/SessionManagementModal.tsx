@@ -116,8 +116,6 @@ export interface SessionManagementModalProps {
   workspacePath?: string | null;
   /** Base URL for API (e.g. http://localhost:3456). */
   serverBaseUrl?: string;
-  /** Loading state for workspace path. */
-  workspaceLoading?: boolean;
   /** Called when user taps "Change workspace" - opens full-screen picker. */
   onOpenWorkspacePicker?: () => void;
   /** Called when user selects a session (fetches messages from API first). */

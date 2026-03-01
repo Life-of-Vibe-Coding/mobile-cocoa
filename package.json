@@ -15,7 +15,8 @@
     "cloudflare:tunnel": "node server/scripts/start-cloudflare-tunnel.mjs",
     "cloudflare:tunnel:server": "CLOUDFLARE_TUNNEL_TARGET=http://localhost:3456 node server/scripts/start-cloudflare-tunnel.mjs",
     "dev:cloudflare": "node server/scripts/start-dev-cloudflare.mjs",
-    "dev:mobile:cloudflare": "EXPO_PUBLIC_CONNECTION_MODE=cloudflare npm run -w mobile start"
+    "dev:mobile:cloudflare": "EXPO_PUBLIC_CONNECTION_MODE=cloudflare npm run -w mobile start",
+    "smoke:server": "node --test ./server/tests/edge-case-smoke.test.mjs"
   },
   "dependencies": {
     "dockerode": "^4.0.9",
