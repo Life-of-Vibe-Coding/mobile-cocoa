@@ -13,7 +13,7 @@ import {
  *   - "direct"     : Direct URL connection (localhost, LAN, etc.)
  *   - "cloudflare" : Cloudflare Tunnel — base URL is tunnel URL; proxy uses X-Target-Port / _targetPort
  */
-type ConnectionMode = "direct" | "cloudflare";
+export type ConnectionMode = "direct" | "cloudflare";
 
 function getConnectionMode(): ConnectionMode {
   const mode =
@@ -133,106 +133,107 @@ function getBaseUrlFromEnv(): string {
   return normalizeBaseUrl(url);
 }
 
+/**
+ * Resolve a preview URL based on connection mode and base URL.
+ * Pure function — independently testable, no side effects beyond console.log.
+ */
+export function resolvePreviewUrlForMode(
+  previewUrl: string,
+  base: string,
+  connectionMode: ConnectionMode
+): string {
+  try {
+    const baseParsed = new URL(base);
+    const parsed = new URL(previewUrl);
+    const basePort = baseParsed.port || (baseParsed.protocol === "https:" ? "443" : "80");
+    const previewPort = parsed.port || (parsed.protocol === "https:" ? "443" : "80");
+
+    // ── Cloudflare (tunnel) mode ──────────────────────────────────────────────
+    if (connectionMode === "cloudflare") {
+      const isPreviewLocalhost = DEFAULT_LOCALHOST_HOSTS.includes(parsed.hostname);
+      if (isPreviewLocalhost) {
+        const targetPort = previewPort !== basePort ? previewPort : basePort;
+        const proxyUrl = new URL(base);
+        proxyUrl.pathname = parsed.pathname || "/";
+        proxyUrl.search = parsed.search || "";
+        proxyUrl.hash = parsed.hash || "";
+        if (targetPort !== basePort) {
+          proxyUrl.searchParams.set("_targetPort", targetPort);
+        }
+        const resolved = proxyUrl.toString();
+        if (__DEV__) {
+          console.log(
+            `[PreviewURL] resolvePreviewUrl (${connectionMode}): incoming=${previewUrl} | resolved=${resolved}`
+          );
+        }
+        return resolved;
+      }
+      if (__DEV__) {
+        console.log(`[PreviewURL] resolvePreviewUrl (${connectionMode}): keep as-is | incoming=${previewUrl}`);
+      }
+      return previewUrl;
+    }
+
+    // ── Direct mode ─────────────────────────────────────────────────────────
+    const isSameHost =
+      DEFAULT_LOCALHOST_HOSTS.includes(parsed.hostname) || parsed.hostname === baseParsed.hostname;
+    const isSamePort = previewPort === basePort;
+    if (isSameHost && isSamePort) {
+      const pathname = (parsed.pathname || "/").replace(/^\//, "") || "index.html";
+      const cleanUrl = `${base.replace(/\/$/, "")}/${pathname}${parsed.search || ""}${parsed.hash || ""}`;
+      if (__DEV__) {
+        console.log(`[PreviewURL] resolvePreviewUrl: base=${base} | incoming=${previewUrl} | resolved=${cleanUrl}`);
+      }
+      return cleanUrl;
+    }
+
+    // Different port: replace localhost with a reachable host.
+    const isPreviewLocalhost = DEFAULT_LOCALHOST_HOSTS.includes(parsed.hostname);
+    if (isPreviewLocalhost && baseParsed.hostname) {
+      const baseIsLocal = DEFAULT_LOCALHOST_HOSTS.includes(baseParsed.hostname);
+      const previewHostRaw = typeof process !== "undefined" ? (process.env.EXPO_PUBLIC_PREVIEW_HOST ?? "").trim() : "";
+      let portToPortHost = baseParsed.hostname;
+      if (baseIsLocal && previewHostRaw) {
+        try {
+          portToPortHost = new URL(
+            previewHostRaw.startsWith("http") ? previewHostRaw : `http://${previewHostRaw}`
+          ).hostname;
+        } catch {
+          portToPortHost = previewHostRaw;
+        }
+      }
+      const portSuffix = parsed.port ? `:${parsed.port}` : "";
+      const rewritten = `${baseParsed.protocol}//${portToPortHost}${portSuffix}${parsed.pathname || "/"}${parsed.search || ""}${parsed.hash || ""}`;
+      if (__DEV__) {
+        console.log(`[PreviewURL] resolvePreviewUrl: port-to-port | incoming=${previewUrl} | resolved=${rewritten}`);
+      }
+      return rewritten;
+    }
+
+    if (__DEV__) {
+      console.log(`[PreviewURL] resolvePreviewUrl: keep as-is | incoming=${previewUrl}`);
+    }
+    return previewUrl;
+  } catch (e) {
+    if (__DEV__) {
+      console.log(
+        `[PreviewURL] resolvePreviewUrl: parse error, using as-is | incoming=${previewUrl} | error=${String(e)}`
+      );
+    }
+    return previewUrl;
+  }
+}
+
 export function createDefaultServerConfig(): IServerConfig {
   const connectionMode = getConnectionMode();
-
   return {
     getBaseUrl: getBaseUrlFromEnv,
     resolvePreviewUrl(previewUrl: string): string {
-      try {
-        const base = getBaseUrlFromEnv();
-        const baseParsed = new URL(base);
-        const parsed = new URL(previewUrl);
-
-        // ── Cloudflare (tunnel) mode: preview URLs route through the proxy ──
-        // The reverse proxy (e.g. behind Cloudflare Tunnel) uses X-Target-Port
-        // to forward to the right port. For WebView we use query param _targetPort.
-        if (connectionMode === "cloudflare") {
-          const isPreviewLocalhost = DEFAULT_LOCALHOST_HOSTS.includes(parsed.hostname);
-          const basePort = baseParsed.port || (baseParsed.protocol === "https:" ? "443" : "80");
-          const previewPort = parsed.port || (parsed.protocol === "https:" ? "443" : "80");
-
-          if (isPreviewLocalhost) {
-            // Rewrite the URL to go through the proxy base URL (Cloudflare tunnel URL)
-            const targetPort = previewPort !== basePort ? previewPort : basePort;
-            const proxyUrl = new URL(base);
-            proxyUrl.pathname = parsed.pathname || "/";
-            proxyUrl.search = parsed.search || "";
-            proxyUrl.hash = parsed.hash || "";
-
-            if (targetPort !== basePort) {
-              proxyUrl.searchParams.set("_targetPort", targetPort);
-            }
-
-            const resolved = proxyUrl.toString();
-            if (__DEV__) {
-              console.log(
-                "[PreviewURL] resolvePreviewUrl (" +
-                  connectionMode +
-                  "): incoming=" +
-                  previewUrl +
-                  " | resolved=" +
-                  resolved
-              );
-            }
-            return resolved;
-          }
-
-          if (__DEV__) {
-            console.log("[PreviewURL] resolvePreviewUrl (" + connectionMode + "): keep as-is | incoming=" + previewUrl);
-          }
-          return previewUrl;
-        }
-
-        // ── Direct mode ──
-        const basePort = baseParsed.port || (baseParsed.protocol === "https:" ? "443" : "80");
-        const previewPort = parsed.port || (parsed.protocol === "https:" ? "443" : "80");
-        const isSameHost =
-          DEFAULT_LOCALHOST_HOSTS.includes(parsed.hostname) ||
-          parsed.hostname === baseParsed.hostname;
-        const isSamePort = previewPort === basePort;
-        if (isSameHost && isSamePort) {
-          const pathname = (parsed.pathname || "/").replace(/^\//, "") || "index.html";
-          const cleanUrl = `${base.replace(/\/$/, "")}/${pathname}${parsed.search || ""}${parsed.hash || ""}`;
-          if (__DEV__) {
-            console.log("[PreviewURL] resolvePreviewUrl: base=" + base + " | incoming=" + previewUrl + " | resolved=" + cleanUrl);
-          }
-          return cleanUrl;
-        }
-        // Different port: port-to-port — replace localhost with a host the device can reach.
-        // When base is localhost, device cannot reach Mac; use EXPO_PUBLIC_PREVIEW_HOST if set.
-        const isPreviewLocalhost = DEFAULT_LOCALHOST_HOSTS.includes(parsed.hostname);
-        if (isPreviewLocalhost && baseParsed.hostname) {
-          const baseIsLocal = DEFAULT_LOCALHOST_HOSTS.includes(baseParsed.hostname);
-          const previewHostRaw = typeof process !== "undefined" ? (process.env.EXPO_PUBLIC_PREVIEW_HOST ?? "").trim() : "";
-          let portToPortHost = baseParsed.hostname;
-          if (baseIsLocal && previewHostRaw) {
-            try {
-              portToPortHost = new URL(previewHostRaw.startsWith("http") ? previewHostRaw : `http://${previewHostRaw}`).hostname;
-            } catch {
-              portToPortHost = previewHostRaw;
-            }
-          }
-          const portSuffix = parsed.port ? `:${parsed.port}` : "";
-          const rewritten = `${baseParsed.protocol}//${portToPortHost}${portSuffix}${parsed.pathname || "/"}${parsed.search || ""}${parsed.hash || ""}`;
-          if (__DEV__) {
-            console.log("[PreviewURL] resolvePreviewUrl: port-to-port | incoming=" + previewUrl + " | resolved=" + rewritten);
-          }
-          return rewritten;
-        }
-        if (__DEV__) {
-          console.log("[PreviewURL] resolvePreviewUrl: keep as-is | incoming=" + previewUrl);
-        }
-        return previewUrl;
-      } catch (e) {
-        if (__DEV__) {
-          console.log("[PreviewURL] resolvePreviewUrl: parse error, using as-is | incoming=" + previewUrl + " | error=" + String(e));
-        }
-        return previewUrl;
-      }
+      return resolvePreviewUrlForMode(previewUrl, getBaseUrlFromEnv(), connectionMode);
     },
   };
 }
+
 
 /** Singleton default for app use when no DI container is used. */
 let defaultInstance: IServerConfig | null = null;

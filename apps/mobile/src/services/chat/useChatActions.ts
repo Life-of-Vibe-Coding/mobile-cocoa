@@ -140,6 +140,56 @@ export function useChatActions(params: UseChatActionsParams) {
         setWaitingForUserInput(false);
       };
 
+      /** Apply a successful submit response from the server. */
+      const applySubmitSuccess = (data: { ok: true; sessionId: string }) => {
+        const newSessionId = data.sessionId;
+        syncRunningStatusToGlobalStore(newSessionId, safePrompt);
+        const newState = getOrCreateSessionState(newSessionId);
+        const currentMessages = getOrCreateSessionMessages(newSessionId);
+        newState.sessionState = "running";
+        const merged = deduplicateMessageIds([...currentMessages, ...pendingMessagesForNewSessionRef.current]);
+        setSessionMessages(newSessionId, merged.length > 0 ? merged : []);
+        pendingMessagesForNewSessionRef.current = [];
+        setSessionDraft(newSessionId, "");
+        const messagesToDisplay = getOrCreateSessionMessages(newSessionId);
+        if (displayedSessionIdRef.current === newSessionId) {
+          setLiveSessionMessages([...messagesToDisplay]);
+          liveMessagesRef.current = messagesToDisplay;
+        }
+        outputBufferRef.current = "";
+        setSessionStateForSession(newSessionId, "running");
+        // Skip JSONL replay so previous turns' message_update events aren't re-processed.
+        skipReplayForSessionRef.current = newSessionId;
+        setConnectionIntent(newSessionId, true);
+        if (!sessionId || sessionId !== newSessionId) {
+          setSessionId(newSessionId);
+        }
+      };
+
+      /** Apply an error response (server returned ok: false or missing sessionId). */
+      const applySubmitError = (data: Record<string, unknown>) => {
+        const errorSessionId = typeof data.sessionId === "string" && !data.sessionId.startsWith("temp-")
+          ? data.sessionId
+          : null;
+        if (errorSessionId) {
+          const errorState = getOrCreateSessionState(errorSessionId);
+          const errorStateMessages = getOrCreateSessionMessages(errorSessionId);
+          errorState.sessionState = "idle";
+          const merged = deduplicateMessageIds([...errorStateMessages, ...pendingMessagesForNewSessionRef.current]);
+          setSessionMessages(errorSessionId, merged);
+          pendingMessagesForNewSessionRef.current = [];
+          setLiveSessionMessages([...merged]);
+          liveMessagesRef.current = merged;
+          setSessionId(errorSessionId);
+          setSessionStateForSession(errorSessionId, "idle");
+        }
+        resetRunningState();
+        setConnectionIntent(sessionId, false);
+        if (__DEV__ && !data.ok) {
+          console.warn("[sse] submit prompt failed:", data?.error ?? "no sessionId in response");
+        }
+      };
+
       let submitStage = "prepare";
       try {
         const requestBody = stableStringify(payload);
@@ -160,53 +210,9 @@ export function useChatActions(params: UseChatActionsParams) {
         const data = await res.json();
         submitStage = "apply-result";
         if (data.ok && data.sessionId) {
-          const newSessionId = data.sessionId;
-          syncRunningStatusToGlobalStore(newSessionId, safePrompt);
-          const newState = getOrCreateSessionState(newSessionId);
-          const currentMessages = getOrCreateSessionMessages(newSessionId);
-          newState.sessionState = "running";
-          const merged = deduplicateMessageIds([...currentMessages, ...pendingMessagesForNewSessionRef.current]);
-          if (merged.length > 0) {
-            setSessionMessages(newSessionId, merged);
-          } else {
-            setSessionMessages(newSessionId, []);
-          }
-          pendingMessagesForNewSessionRef.current = [];
-          setSessionDraft(newSessionId, "");
-          const messagesToDisplay = getOrCreateSessionMessages(newSessionId);
-          if (displayedSessionIdRef.current === newSessionId) {
-            setLiveSessionMessages([...messagesToDisplay]);
-            liveMessagesRef.current = messagesToDisplay;
-          }
-          outputBufferRef.current = "";
-          setSessionDraft(newSessionId, "");
-          setSessionStateForSession(newSessionId, "running");
-          // The client already holds messages for this session in memory.
-          // Skip JSONL replay so previous turns' message_update events
-          // are not re-processed and duplicated into the new response.
-          skipReplayForSessionRef.current = newSessionId;
-          setConnectionIntent(newSessionId, true);
-          if (!sessionId || sessionId !== newSessionId) {
-            setSessionId(newSessionId);
-          }
+          applySubmitSuccess(data);
         } else {
-          if (data.sessionId && typeof data.sessionId === "string" && !data.sessionId.startsWith("temp-")) {
-            const errorState = getOrCreateSessionState(data.sessionId);
-            const errorStateMessages = getOrCreateSessionMessages(data.sessionId);
-            errorState.sessionState = "idle";
-            const merged = deduplicateMessageIds([...errorStateMessages, ...pendingMessagesForNewSessionRef.current]);
-            setSessionMessages(data.sessionId, merged);
-            pendingMessagesForNewSessionRef.current = [];
-            setLiveSessionMessages([...merged]);
-            liveMessagesRef.current = merged;
-            setSessionId(data.sessionId);
-            setSessionStateForSession(data.sessionId, "idle");
-          }
-          resetRunningState();
-          setConnectionIntent(sessionId, false);
-          if (__DEV__ && !data.ok) {
-            console.warn("[sse] submit prompt failed:", data?.error ?? "no sessionId in response");
-          }
+          applySubmitError(data);
         }
       } catch (err) {
         const errStage = submitStage;
@@ -250,6 +256,7 @@ export function useChatActions(params: UseChatActionsParams) {
       syncRunningStatusToGlobalStore,
     ]
   );
+
 
   const submitAskQuestionAnswer = useCallback(
     async (answers: Array<{ header: string; selected: string[] }>) => {

@@ -15,12 +15,7 @@
     "cloudflare:tunnel": "node scripts/start-cloudflare-tunnel.mjs",
     "cloudflare:tunnel:server": "CLOUDFLARE_TUNNEL_TARGET=http://localhost:3456 node scripts/start-cloudflare-tunnel.mjs",
     "dev:cloudflare": "node scripts/start-dev-cloudflare.mjs",
-    "dev:mobile:cloudflare": "EXPO_PUBLIC_CONNECTION_MODE=cloudflare npm run -w mobile start",
-    "icons:convert": "node scripts/convert-atom-icons.mjs",
-    "smoke:sse": "node scripts/smoke-pi-rpc-sse-multi-client.mjs",
-    "smoke:concurrent": "node scripts/smoke-pi-rpc-sse-concurrent.mjs",
-    "smoke:session-switch": "node scripts/smoke-pi-rpc-sse-session-switch.mjs",
-    "smoke:session-folder": "node scripts/smoke-session-folder.mjs"
+    "dev:mobile:cloudflare": "EXPO_PUBLIC_CONNECTION_MODE=cloudflare npm run -w mobile start"
   },
   "dependencies": {
     "dockerode": "^4.0.9",

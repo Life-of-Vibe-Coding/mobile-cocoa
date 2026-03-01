@@ -9,7 +9,8 @@ import {
   DEFAULT_SSE_HOST,
   getWorkspaceCwd,
   loadModelsConfig,
-  projectRoot
+  projectRoot,
+  VALID_PROVIDERS,
 } from "../config/index.js";
 
 import { createPiRpcSession } from "./piRpcSession.js";
@@ -30,8 +31,6 @@ export function shutdown(signal) {
   globalSpawnChildren.clear();
   process.exit(0);
 }
-
-const VALID_PROVIDERS = ["codex", "gemini", "claude"];
 
 function resolveProvider(fromPayload) {
   if (typeof fromPayload === "string" && VALID_PROVIDERS.includes(fromPayload)) {

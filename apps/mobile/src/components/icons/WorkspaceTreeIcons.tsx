@@ -1,7 +1,7 @@
 /**
  * Workspace tree icons from file-name-mapping-rules.
  * Uses material-icon-theme (folders) and vscode-icons (files) via better-icons.
- * Regenerate: node scripts/fetch-workspace-icons.mjs
+ * Icons are loaded from `assets/icons/workspace-icon-svgs.json`.
  */
 import { getFileIconSvg, getFolderIconSvg } from "@/utils/workspaceIcons";
 import React from "react";

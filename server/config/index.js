@@ -45,6 +45,33 @@ function parseIntOrDefault(value, fallback) {
   return Number.isInteger(parsed) ? parsed : fallback;
 }
 
+function asStringSafe(value, fallback) {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function asRequiredString(value, label) {
+  const str = typeof value === "string" ? value.trim() : "";
+  if (!str) {
+    throw new Error(`[config] Missing required config string: ${label}`);
+  }
+  return str;
+}
+
+function asRequiredNumber(value, label) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed)) {
+    throw new Error(`[config] Missing required config number: ${label}`);
+  }
+  return parsed;
+}
+
+function asRequiredStringList(value, label) {
+  if (!Array.isArray(value)) {
+    throw new Error(`[config] Missing required config string list: ${label}`);
+  }
+  return value.map((entry) => String(entry ?? "").trim()).filter(Boolean);
+}
+
 // Baseline defaults used when models/pi/skills config files are missing or invalid.
 const FALLBACKS = asObject(loadConfigFile(DEFAULTS_CONFIG_PATH, { label: "config/defaults.json" }));
 const SERVER_DEFAULTS = asObject(FALLBACKS.server);
@@ -58,12 +85,46 @@ const DEFAULT_MOBILE_CONFIG = asObject(SERVER_DEFAULTS.mobile);
 const DEFAULT_SESSION_CONFIG = asObject(SERVER_DEFAULTS.sessions);
 const DEFAULT_SCRIPTS = asObject(SERVER_DEFAULTS.scripts);
 
-export const LOOPBACK_HOSTS = Array.isArray(SERVER_DEFAULTS.loopbackHosts)
-  ? SERVER_DEFAULTS.loopbackHosts
-  : [];
+export const LOOPBACK_HOSTS = asRequiredStringList(SERVER_DEFAULTS.loopbackHosts, "server.loopbackHosts");
 
-export const DEFAULT_PERMISSION_MODE_FROM_CONFIG = asStringSafe(SERVER_DEFAULTS.defaultPermissionMode, "");
-export const DEFAULT_PROVIDER_FROM_CONFIG = asStringSafe(SERVER_DEFAULTS.defaultProvider, "");
+export const DEFAULT_PERMISSION_MODE_FROM_CONFIG = asRequiredString(SERVER_DEFAULTS.defaultPermissionMode, "server.defaultPermissionMode");
+export const DEFAULT_PROVIDER_FROM_CONFIG = asRequiredString(SERVER_DEFAULTS.defaultProvider, "server.defaultProvider");
+
+const DEFAULT_PORT_FROM_CONFIG = asRequiredNumber(SERVER_DEFAULTS.port, "server.port");
+const DEFAULT_SIDEBAR_REFRESH_INTERVAL_MS = asRequiredNumber(
+  SERVER_DEFAULTS.sidebarRefreshIntervalMs,
+  "server.sidebarRefreshIntervalMs",
+);
+const DEFAULT_LOGS_DIR_NAME = asRequiredString(SERVER_DEFAULTS.logsDirName, "server.logsDirName");
+const DEFAULT_LLM_CLI_IO_SUBDIR = asRequiredString(SERVER_DEFAULTS.llmCliIoSubdir, "server.llmCliIoSubdir");
+const DEFAULT_PI_CLI_PATH = PI_DEFAULTS?.cliPath
+  ? asRequiredString(PI_DEFAULTS.cliPath, "pi.cliPath")
+  : asRequiredString(SERVER_DEFAULTS.pi?.cliPath, "server.pi.cliPath");
+const DEFAULT_SESSIONS_DIR = asRequiredString(DEFAULT_SESSION_CONFIG?.agentDir, "server.sessions.agentDir");
+const DEFAULT_PROXY_PORT = asRequiredNumber(DEFAULT_PROXY_CONFIG.port, "server.proxy.port");
+const DEFAULT_PROXY_BIND_HOST = asRequiredString(DEFAULT_PROXY_CONFIG.bindHost, "server.proxy.bindHost");
+const DEFAULT_PROXY_LOOPBACK_HOST = asRequiredString(DEFAULT_PROXY_CONFIG.loopbackHost, "server.proxy.loopbackHost");
+const DEFAULT_PROXY_TARGET_HOST = asRequiredString(DEFAULT_PROXY_CONFIG.defaultTargetHost, "server.proxy.defaultTargetHost");
+const DEFAULT_PROXY_DEFAULT_TARGET_PORT = asRequiredNumber(
+  DEFAULT_PROXY_CONFIG.defaultTargetPort,
+  "server.proxy.defaultTargetPort",
+);
+const DEFAULT_LOG_HOST = asRequiredString(SERVER_DEFAULTS.logHost, "server.logHost");
+const DEFAULT_LISTEN_HOST = asRequiredString(SERVER_DEFAULTS.listenHost, "server.listenHost");
+const DEFAULT_SERVER_URL_VALUE = asRequiredString(SERVER_DEFAULTS.mobile?.defaultServerUrl, "server.mobile.defaultServerUrl");
+const DEFAULT_SSE_HOST_VALUE = asRequiredString(SERVER_DEFAULTS.sseHost, "server.sseHost");
+const DEFAULT_TUNNEL_PROXY_PORT_FROM_CONFIG = asRequiredNumber(
+  DEFAULT_MOBILE_CONFIG.tunnelProxyPort,
+  "server.mobile.tunnelProxyPort",
+);
+const DEFAULT_ANDROID_EMULATOR_HOST = asRequiredString(
+  DEFAULT_MOBILE_CONFIG.androidEmulatorHost,
+  "server.mobile.androidEmulatorHost",
+);
+const DEFAULT_LOCALHOST_ALIASES = asRequiredStringList(
+  DEFAULT_MOBILE_CONFIG.localhostAliases,
+  "server.mobile.localhostAliases",
+);
 
 // ── External models config ──────────────────────────────────────────────────
 /** Absolute path to the models config JSON (config/models.json). */
@@ -109,10 +170,14 @@ export function loadPiConfig() {
   }
 }
 
-export const PI_FALLBACK_MODEL = PI_DEFAULTS?.fallbackModel;
-export const PI_PROVIDER_FALLBACK = PI_DEFAULTS?.providerFallback;
+export const PI_FALLBACK_MODEL = asRequiredString(PI_DEFAULTS.fallbackModel, "pi.fallbackModel");
+export const PI_PROVIDER_FALLBACK = asRequiredString(PI_DEFAULTS.providerFallback, "pi.providerFallback");
 
 export const PI_SYSTEM_PROMPTS = asObject(PI_DEFAULTS.systemPrompts);
+export const PI_SYSTEM_PROMPT_TERMINAL_RULES = asRequiredString(
+  PI_SYSTEM_PROMPTS.terminalRules,
+  "pi.systemPrompts.terminalRules",
+);
 
 // ── External Skills config ──────────────────────────────────────────────────
 /** Absolute path to the skills config JSON (config/skills.json). */
@@ -164,41 +229,42 @@ function resolveWorkspaceCwd() {
 }
 
 // Server port/listener + behavior defaults
-export const PORT = parseIntOrDefault(process.env.PORT, parseIntOrDefault(SERVER_DEFAULTS.port, 3456));
+export const PORT = parseIntOrDefault(process.env.PORT, DEFAULT_PORT_FROM_CONFIG);
 export const WORKSPACE_ALLOWED_ROOT = path.resolve(os.homedir());
 
 let currentWorkspaceCwd = resolveWorkspaceCwd();
 
 /** Config key for sidebar refresh interval. */
 export const SIDEBAR_REFRESH_INTERVAL_MS =
-  parseIntOrDefault(process.env.SIDEBAR_REFRESH_INTERVAL_MS, parseIntOrDefault(SERVER_DEFAULTS.sidebarRefreshIntervalMs, 3000));
+  parseIntOrDefault(process.env.SIDEBAR_REFRESH_INTERVAL_MS, DEFAULT_SIDEBAR_REFRESH_INTERVAL_MS);
 
 /** Config key for default permission mode. */
 export const DEFAULT_PERMISSION_MODE = process.env.DEFAULT_PERMISSION_MODE || DEFAULT_PERMISSION_MODE_FROM_CONFIG;
 
+/** Canonical provider names recognized throughout the app. */
+export const VALID_PROVIDERS = Object.freeze(["claude", "gemini", "codex"]);
+
 /** Validate default provider. */
 const rawDefaultProvider = typeof process.env.DEFAULT_PROVIDER === "string" ? process.env.DEFAULT_PROVIDER.toLowerCase() : "";
 export const DEFAULT_PROVIDER =
-  ["claude", "gemini", "codex"].includes(rawDefaultProvider)
+  VALID_PROVIDERS.includes(rawDefaultProvider)
     ? rawDefaultProvider
     : DEFAULT_PROVIDER_FROM_CONFIG;
 
 /** Log directory for AI provider output. */
-const AI_LOG_ROOT = asStringSafe(SERVER_DEFAULTS?.logsDirName, "logs");
+const AI_LOG_ROOT = DEFAULT_LOGS_DIR_NAME;
 const AI_LOG_DIR = process.env.CLAUDE_OUTPUT_LOG
   ? path.resolve(process.env.CLAUDE_OUTPUT_LOG)
   : path.join(projectRoot, AI_LOG_ROOT);
 
-function asStringSafe(value, fallback) {
-  return typeof value === "string" && value.trim() ? value : fallback;
-}
+// (asStringSafe is defined above, near the top of the module)
 
 function resolveLogDir() {
   try {
     const stat = fs.statSync(AI_LOG_DIR);
     return stat.isDirectory() ? AI_LOG_DIR : path.dirname(AI_LOG_DIR);
   } catch {
-    return path.join(projectRoot, asStringSafe(SERVER_DEFAULTS?.logsDirName, "logs"));
+    return path.join(projectRoot, DEFAULT_LOGS_DIR_NAME);
   }
 }
 
@@ -209,7 +275,7 @@ const LOG_DIR = resolveLogDir();
 const LOG_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 
 /** Base directory for LLM CLI input/output debug logs. */
-export const LLM_CLI_IO_LOG_DIR = path.join(LOG_DIR, asStringSafe(SERVER_DEFAULTS?.llmCliIoSubdir, "llm-cli-input-output"));
+export const LLM_CLI_IO_LOG_DIR = path.join(LOG_DIR, DEFAULT_LLM_CLI_IO_SUBDIR);
 /** Run-specific directory: llm-cli-input-output/{timestamp}. */
 export const LLM_CLI_IO_RUN_DIR = path.join(LLM_CLI_IO_LOG_DIR, LOG_TIMESTAMP);
 
@@ -239,30 +305,37 @@ export function getLlmCliIoTurnPaths(provider, sessionId, turnId) {
 }
 
 // PI + session/runtime settings
-export const PI_CLI_PATH = process.env.PI_CLI_PATH || asStringSafe(PI_DEFAULTS?.cliPath, asStringSafe(SERVER_DEFAULTS?.pi?.cliPath, "pi"));
-export const SESSIONS_ROOT = path.join(projectRoot, asStringSafe(DEFAULT_SESSION_CONFIG?.agentDir, path.join(".pi", "agent")));
+export const PI_CLI_PATH = process.env.PI_CLI_PATH || DEFAULT_PI_CLI_PATH;
+export const SESSIONS_ROOT = path.join(projectRoot, DEFAULT_SESSIONS_DIR);
 
 // Docker flag
 export const ENABLE_DOCKER_MANAGER = process.env.ENABLE_DOCKER_MANAGER === "1" || process.env.ENABLE_DOCKER_MANAGER === "true";
 
+/**
+ * Returns the active overlay network type.
+ * @returns {"tunnel" | "none"}
+ */
+export function getOverlayNetwork() {
+  const raw = typeof process.env.OVERLAY_NETWORK === "string" ? process.env.OVERLAY_NETWORK.trim().toLowerCase() : "";
+  return raw === "tunnel" ? "tunnel" : "none";
+}
+
 // Tunnel/proxy settings
-export const TUNNEL_PROXY_PORT = parseIntOrDefault(process.env.PROXY_PORT, parseIntOrDefault(DEFAULT_PROXY_CONFIG.port, 9443));
+export const TUNNEL_PROXY_PORT = parseIntOrDefault(process.env.PROXY_PORT, DEFAULT_PROXY_PORT);
 export const PROXY_DEFAULT_TARGET_PORT = parseIntOrDefault(
   process.env.PROXY_DEFAULT_TARGET_PORT,
-  parseIntOrDefault(process.env.PORT, parseIntOrDefault(DEFAULT_PROXY_CONFIG.defaultTargetPort, PORT)),
+  parseIntOrDefault(process.env.PORT, DEFAULT_PROXY_DEFAULT_TARGET_PORT),
 );
-export const PROXY_BIND_HOST = asStringSafe(process.env.PROXY_BIND, asStringSafe(DEFAULT_PROXY_CONFIG.bindHost, "0.0.0.0"));
-export const PROXY_LOOPBACK_HOST = asStringSafe(DEFAULT_PROXY_CONFIG.loopbackHost, "127.0.0.1");
-export const PROXY_DEFAULT_TARGET_HOST = asStringSafe(DEFAULT_PROXY_CONFIG.defaultTargetHost, "localhost");
-export const DEFAULT_SERVER_HOST = asStringSafe(SERVER_DEFAULTS.logHost, "localhost");
-export const SERVER_LISTEN_HOST = asStringSafe(SERVER_DEFAULTS.listenHost, "0.0.0.0");
-export const DEFAULT_SSE_HOST = asStringSafe(SERVER_DEFAULTS.sseHost, `${PROXY_DEFAULT_TARGET_HOST}:${PORT}`);
-export const DEFAULT_SERVER_URL = `${asStringSafe(SERVER_DEFAULTS.mobile?.defaultServerUrl, "http://localhost:3456")}`;
-export const DEFAULT_TUNNEL_PROXY_PORT = parseIntOrDefault(DEFAULT_MOBILE_CONFIG.tunnelProxyPort, parseIntOrDefault(DEFAULT_PROXY_CONFIG.port, 9443));
-export const ANDROID_EMULATOR_HOST = asStringSafe(DEFAULT_MOBILE_CONFIG.androidEmulatorHost, "10.0.2.2");
-export const MOBILE_LOCALHOST_ALIASES = Array.isArray(DEFAULT_MOBILE_CONFIG.localhostAliases)
-  ? DEFAULT_MOBILE_CONFIG.localhostAliases
-  : LOOPBACK_HOSTS;
+export const PROXY_BIND_HOST = asStringSafe(process.env.PROXY_BIND, DEFAULT_PROXY_BIND_HOST);
+export const PROXY_LOOPBACK_HOST = DEFAULT_PROXY_LOOPBACK_HOST;
+export const PROXY_DEFAULT_TARGET_HOST = DEFAULT_PROXY_TARGET_HOST;
+export const DEFAULT_SERVER_HOST = DEFAULT_LOG_HOST;
+export const SERVER_LISTEN_HOST = DEFAULT_LISTEN_HOST;
+export const DEFAULT_SSE_HOST = DEFAULT_SSE_HOST_VALUE;
+export const DEFAULT_SERVER_URL = DEFAULT_SERVER_URL_VALUE;
+export const DEFAULT_TUNNEL_PROXY_PORT = DEFAULT_TUNNEL_PROXY_PORT_FROM_CONFIG;
+export const ANDROID_EMULATOR_HOST = DEFAULT_ANDROID_EMULATOR_HOST;
+export const MOBILE_LOCALHOST_ALIASES = DEFAULT_LOCALHOST_ALIASES;
 export const CLOUDFLARE_TUNNEL_TARGET_TEMPLATE = `http://${PROXY_LOOPBACK_HOST}:${TUNNEL_PROXY_PORT}`;
 export const SMOKE_SCRIPT_DEFAULTS = asObject(DEFAULT_SCRIPTS.smokeSessionSwitch);
 export const LOAD_TEST_SCRIPT_DEFAULTS = asObject(DEFAULT_SCRIPTS.loadTestCodex);

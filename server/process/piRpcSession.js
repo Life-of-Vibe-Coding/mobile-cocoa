@@ -15,7 +15,7 @@ import {
   LOOPBACK_HOSTS,
   PI_CLI_PATH, PORT,
   SESSIONS_ROOT,
-  PI_SYSTEM_PROMPTS,
+  PI_SYSTEM_PROMPT_TERMINAL_RULES,
   loadModelsConfig,
   loadPiConfig,
   loadSkillsConfig,
@@ -34,9 +34,7 @@ function getClientProviderToPi() {
 function isLoopbackHost(rawHost) {
   const host = String(rawHost || "").toLowerCase();
   if (!host) return false;
-  if (LOOPBACK_HOSTS.length === 0) {
-    return host === "localhost" || host.startsWith("localhost:");
-  }
+  if (LOOPBACK_HOSTS.length === 0) return false;
   return LOOPBACK_HOSTS.some(
     (alias) =>
       host === alias || host.startsWith(`${alias}:`) || host === `[${alias}]` || host.startsWith(`[${alias}]:`),
@@ -72,7 +70,7 @@ function getRemoteHostFromSocket(socket) {
  * Derive connection context from socket for Pi agent awareness.
  * Supports tunnel (dev proxy, e.g. Cloudflare) and localhost connections.
  * @param {import('socket.io').Socket} socket
- * @returns {string} "localhost", "tunnel remote host", or "remote"
+ * @returns {string} "local", "tunnel remote host", or "remote"
  */
 function getConnectionContext(socket) {
   const addr = String(socket?.handshake?.address ?? socket?.conn?.remoteAddress ?? "");
@@ -83,11 +81,11 @@ function getConnectionContext(socket) {
   if (overlay === "tunnel") {
     const tunnelHeader = socket?.handshake?.headers?.["x-tunnel-proxy"];
     if (tunnelHeader) return "tunnel remote host";
-    if (isLocal) return "localhost";
+    if (isLocal) return DEFAULT_SERVER_HOST;
     return "tunnel remote host";
   }
 
-  if (isLocal) return "localhost";
+  if (isLocal) return DEFAULT_SERVER_HOST;
   return "remote";
 }
 
@@ -423,7 +421,7 @@ export function createPiRpcSession({
       fs.mkdirSync(sessionDir, { recursive: true });
     } catch (_) { }
 
-    const terminalRules = piCfg.systemPrompts?.terminalRules || PI_SYSTEM_PROMPTS.terminalRules || "";
+    const terminalRules = piCfg.systemPrompts?.terminalRules || PI_SYSTEM_PROMPT_TERMINAL_RULES;
     const connectionType = getConnectionContext(socket);
     const previewHost = getPreviewHost();
     const overlay = getActiveOverlay();
@@ -439,7 +437,7 @@ export function createPiRpcSession({
     const connectionContext =
       connectionType === "tunnel remote host"
         ? `The user is connecting via tunnel (e.g. Cloudflare Tunnel).${overlayHint}`
-        : connectionType === "localhost"
+        : connectionType === DEFAULT_SERVER_HOST
           ? `The user is connecting via ${DEFAULT_SERVER_HOST}.`
           : `The user is connecting from a remote host (not ${DEFAULT_SERVER_HOST}).${overlayHint}`;
     const criticalPrompt = `CRITICAL: You are running within a process with PID ${process.pid}. The application that manages you is listening on port ${PORT}. You MUST NEVER kill this process (PID ${process.pid}) or occupy its port (${PORT}). If you kill this process, you will immediately terminate yourself.`;
@@ -449,7 +447,7 @@ export function createPiRpcSession({
     const effectiveRemoteHost =
       hostFromSocket ||
       (previewHost && previewHost !== "(not set)" ? previewHost : null) ||
-      (connectionType === "localhost" ? DEFAULT_SERVER_HOST : null);
+      (connectionType === DEFAULT_SERVER_HOST ? DEFAULT_SERVER_HOST : null);
     const terminalRunnerContext =
       effectiveRemoteHost != null
         ? `When using the terminal-runner skill, REQUIRED parameters are pre-filled — use them and do NOT ask the user: workspace=${JSON.stringify(workspace)}, remote_host=${JSON.stringify(effectiveRemoteHost)}. Never prompt for workspace or remote_host.`

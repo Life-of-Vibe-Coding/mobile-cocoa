@@ -15,7 +15,5 @@ All icons in this folder use **react-native-svg**, which is supported by Expo.
 - **ChatActionIcons**: `AttachPlusIcon`, `ChevronDownIcon`, `GlobeIcon`, `TerminalIcon`, `StopCircleIcon`, `CloseIcon`, `PlayIcon` (used by chat input and code run actions).
 - **WorkspaceTreeIcons**: `FolderIcon`, `FolderOpenIcon`, `FileIconByType` (Lucide; used in `WorkspaceSidebar`). File type is chosen by extension (e.g. `file-code` for `.ts`/`.js`, `file-text` for `.md`, `file-braces` for `.json`).
 
-Provider brand source assets (Gemini/Claude) are stored at `apps/mobile/assets/icons/providers` and downloaded from `lobehub/lobe-icons`.
-
 Source SVGs from Iconify via **better-icons**:  
 `better-icons get lucide:menu`, `lucide:folder`, `lucide:file-code`, etc.

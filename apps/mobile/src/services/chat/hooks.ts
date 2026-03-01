@@ -28,6 +28,7 @@ import {
 import { useChatActions } from "./useChatActions";
 import { useChatExternalCallbacks } from "./useChatExternalCallbacks";
 import { useChatStreamingLifecycle } from "./useChatStreamingLifecycle";
+import type { SseEventHandlers } from "./sseConnection";
 
 // Re-export hook types for consumers.
 export type { Message, CodeReference, PermissionDenial, PendingAskUserQuestion, LastRunOptions };
@@ -59,13 +60,7 @@ export function useChat(options: UseChatOptions = {}) {
   const [lastSessionTerminated, setLastSessionTerminated] = useState(false);
 
   const activeSseRef = useRef<{ id: string; source: EventSourceLike } | null>(null);
-  const activeSseHandlersRef = useRef<{
-    open: (event: unknown) => void;
-    error: (event: unknown) => void;
-    message: (event: any) => void;
-    end: (event: any) => void;
-    done: (event: any) => void;
-  } | null>(null);
+  const activeSseHandlersRef = useRef<SseEventHandlers | null>(null);
   const suppressActiveSessionSwitchRef = useRef(false);
   const selectedSessionRuntimeRef = useRef<{ id: string | null; running: boolean } | null>(null);
   const connectionIntentBySessionRef = useRef<Map<string, boolean>>(new Map());

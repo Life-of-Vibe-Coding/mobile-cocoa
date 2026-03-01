@@ -1,6 +1,6 @@
 # Proxy Module
 
-> **Path:** [`server/proxy.js`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/proxy.js)
+> **Path:** [`server/utils/proxy.js`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/server/utils/proxy.js)
 
 ## Function
 
@@ -28,7 +28,7 @@ Local reverse proxy (port multiplexer) for Cloudflare Tunnel. Routes HTTP and We
 
 ```bash
 # Start the proxy standalone
-node server/proxy.js
+node server/utils/proxy.js
 
 # Start proxy + server + tunnel together
 npm run dev:cloudflare
@@ -59,7 +59,7 @@ curl "http://tunnel-url/?_targetPort=5173"
 
 ```bash
 # Start proxy
-node server/proxy.js
+node server/utils/proxy.js
 
 # In another terminal, test routing
 curl http://localhost:9443/api/config  # → localhost:3456

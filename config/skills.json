@@ -1,8 +1,8 @@
 {
     "_comment": "Skills configuration — edit this file to change skill paths, categories, and defaults. No code changes required.",
-    "skillsLibraryDir": "server/skills-library",
-    "skillsEnabledFile": "server/skills-enabled.json",
-    "skillsEnabledDir": "server/skills_enabled",
+    "skillsLibraryDir": "server/skills/library",
+    "skillsEnabledFile": "server/skills/enabled.json",
+    "skillsEnabledDir": "server/skills/enabled",
     "skillFileName": "SKILL.md",
     "defaultCategory": "Development",
     "categories": {

@@ -1,10 +1,10 @@
 import { createEventDispatcher } from "@/services/providers/eventDispatcher";
-import { stripAnsi } from "@/services/providers/stream";
+import { isProviderStream, stripAnsi } from "@/services/providers/stream";
 import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import { resolveStreamUrl } from "./chatHookHelpers";
 import type {
-    EventSourceCtor, EventSourceLike, LastRunOptions, Message,
+    EventSourceLike, LastRunOptions, Message,
     PendingAskUserQuestion,
     PermissionDenial,
     SessionLiveState,
@@ -24,7 +24,7 @@ import {
     createStreamFlusher,
 } from "./streamFlusher";
 import { processRawSseLine } from "./sseMessageParser";
-import { isProviderStream } from "@/services/providers/stream";
+
 
 type UseChatStreamingLifecycleParams = {
   serverUrl: string;
@@ -367,7 +367,6 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
       },
       setPendingAskQuestion,
       setCurrentActivity: () => { /* not surfaced in mobile UI */ },
-      setModelName: () => { /* not surfaced in mobile UI */ },
       addMessage: (role, content, codeRefs) => msgHandlers.addMessageForSession(role, content, codeRefs),
       appendAssistantText: (chunk) => flusher.queue(chunk),
       getCurrentAssistantContent: () => {

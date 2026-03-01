@@ -3,11 +3,11 @@ import { Router } from "express";
 import fs from "fs";
 import path from "path";
 import {
-  DEFAULT_PROVIDER,
-  DEFAULT_PROVIDER_MODELS,
-  getWorkspaceCwd,
-  SESSIONS_ROOT,
-  WORKSPACE_ALLOWED_ROOT,
+    DEFAULT_PROVIDER,
+    DEFAULT_PROVIDER_MODELS,
+    getWorkspaceCwd,
+    SESSIONS_ROOT,
+    WORKSPACE_ALLOWED_ROOT,
 } from "../config/index.js";
 import { formatSessionLogTimestamp } from "../process/index.js";
 import { createSession, getSession, removeSession, resolveSession, subscribeToSession } from "../sessionRegistry.js";
@@ -30,6 +30,11 @@ import {
 
 const DEFAULT_SESSION_PROVIDER = DEFAULT_PROVIDER;
 const DEFAULT_SESSION_MODEL = DEFAULT_PROVIDER_MODELS?.[DEFAULT_SESSION_PROVIDER];
+
+/** Maximum ms to wait for an agent process to start before sending SSE end. */
+const SSE_PROCESS_START_WAIT_MS = 6_000;
+/** Interval in ms to poll for process start during active-only SSE connections. */
+const SSE_PROCESS_START_POLL_MS = 150;
 
 export function registerSessionsRoutes(app) {
     const router = Router();
@@ -459,8 +464,8 @@ export function registerSessionsRoutes(app) {
         }
         if (activeOnly && !processRunning) {
             // Race: mobile connects before Pi emits agent_start. Poll briefly for process to start.
-            const maxWaitMs = 6000;
-            const pollMs = 150;
+            const maxWaitMs = SSE_PROCESS_START_WAIT_MS;
+            const pollMs = SSE_PROCESS_START_POLL_MS;
             const start = Date.now();
             let done = false;
             req.on("close", () => {

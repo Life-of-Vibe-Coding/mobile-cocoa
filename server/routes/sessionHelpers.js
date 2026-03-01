@@ -1,7 +1,14 @@
 import fs from "fs";
 import path from "path";
-import { getWorkspaceCwd, SESSIONS_ROOT } from "../config/index.js";
+import { getWorkspaceCwd, SESSIONS_ROOT, VALID_PROVIDERS, DEFAULT_PROVIDER } from "../config/index.js";
 import { resolveSession } from "../sessionRegistry.js";
+
+/** Version written into each new session JSONL header. Increment on schema changes. */
+const SESSION_FILE_VERSION = 3;
+/** Max characters to preview for the first user message in session listings. */
+const FIRST_USER_INPUT_MAX_LEN = 80;
+/** Byte threshold above which assistant message events are stripped during SSE replay. */
+const SLIM_REPLAY_THRESHOLD_BYTES = 2048;
 
 /** Extract content from Pi message content array. Thinking uses c.thinking, text uses c.text. */
 export function extractMessageContent(contentArr) {
@@ -34,10 +41,10 @@ export function mapProvider(providerStr) {
 }
 
 export function normalizeProvider(providerStr) {
-    if (providerStr === "claude" || providerStr === "gemini" || providerStr === "codex") {
+    if (VALID_PROVIDERS.includes(providerStr)) {
         return providerStr;
     }
-    return "codex";
+    return DEFAULT_PROVIDER;
 }
 
 /** Derive cwd from session file path. Returns null when file is in central SESSIONS_ROOT (no workspace in path). */
@@ -76,9 +83,9 @@ export function parseSessionMetadata(filePath) {
                         const textParts = content
                             .filter((c) => c?.type === "text" && typeof c.text === "string")
                             .map((c) => c.text);
-                        firstUserInput = textParts.join("").trim().slice(0, 80) || null;
+                        firstUserInput = textParts.join("").trim().slice(0, FIRST_USER_INPUT_MAX_LEN) || null;
                     } else if (typeof content === "string") {
-                        firstUserInput = content.trim().slice(0, 80) || null;
+                        firstUserInput = content.trim().slice(0, FIRST_USER_INPUT_MAX_LEN) || null;
                     }
                     break; // found first user message
                 }
@@ -168,7 +175,7 @@ export function createNewSessionFile(sessionId, cwd) {
     const filePath = path.join(sessionDir, fileName);
     const header = JSON.stringify({
         type: "session",
-        version: 3,
+        version: SESSION_FILE_VERSION,
         id: sessionId,
         timestamp: new Date().toISOString(),
         cwd,
@@ -190,7 +197,7 @@ export function slimReplayLine(line) {
         return JSON.stringify({ type: typeMatch?.[1] ?? "unknown" });
     }
     // Large "message" events with assistant content — check size before stripping
-    if (/"type"\s*:\s*"message"/.test(line) && line.length > 2048) {
+    if (/"type"\s*:\s*"message"/.test(line) && line.length > SLIM_REPLAY_THRESHOLD_BYTES) {
         try {
             const parsed = JSON.parse(line);
             if (parsed.message?.role === "assistant") {
