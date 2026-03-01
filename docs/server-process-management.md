@@ -17,6 +17,7 @@ Creates and manages AI provider processes (Claude, Gemini, Codex) via Pi RPC. Pr
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
+| `shutdown()` | `shutdown()` | Graceful shutdown — kills all spawned children |
 | `resolveProvider(fromPayload)` | `resolveProvider("gemini")` | Validates and defaults the provider string |
 | `getDefaultModelForProvider(provider)` | `getDefaultModelForProvider("claude")` | Reads default model from `config/models.json` |
 | `createProcessManager(socket, opts)` | — | Creates a Socket.IO-based process manager with `handleSubmitPrompt`, `handleInput`, `handleTerminate`, `cleanup` |

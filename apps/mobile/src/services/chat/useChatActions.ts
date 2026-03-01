@@ -70,6 +70,8 @@ export function useChatActions(params: UseChatActionsParams) {
     setConnectionIntent,
     clearConnectionIntent,
     closeActiveSse,
+    touchSession,
+    evictOldestSessions,
   } = sessionCache;
 
   const syncRunningStatusToGlobalStore = useCallback(
@@ -157,6 +159,8 @@ export function useChatActions(params: UseChatActionsParams) {
         // Skip JSONL replay so previous turns' message_update events aren't re-processed.
         skipReplayForSessionRef.current = newSessionId;
         setConnectionIntent(newSessionId, true);
+        touchSession(newSessionId);
+        evictOldestSessions(newSessionId);
         if (!sessionId || sessionId !== newSessionId) {
           setSessionId(newSessionId);
         }
@@ -239,6 +243,8 @@ export function useChatActions(params: UseChatActionsParams) {
       model,
       serverUrl,
       sessionId,
+      touchSession,
+      evictOldestSessions,
       setSessionStateForSession,
       setPermissionDenials,
       setLastSessionTerminated,

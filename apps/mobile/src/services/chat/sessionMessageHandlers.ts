@@ -10,22 +10,22 @@ export interface SessionMessageHandlers {
 }
 
 type SessionMessageHandlerDeps = {
-  sidRef: { current: string };
-  getOrCreateSessionState: (sid: string) => SessionLiveState;
-  getOrCreateSessionMessages: (sid: string) => Message[];
-  setSessionMessages: (sid: string, messages: Message[]) => void;
-  getSessionDraft: (sid: string) => string;
-  setSessionDraft: (sid: string, draft: string) => void;
+  sessionIdRef: { current: string };
+  getOrCreateSessionState: (sessionId: string) => SessionLiveState;
+  getOrCreateSessionMessages: (sessionId: string) => Message[];
+  setSessionMessages: (sessionId: string, messages: Message[]) => void;
+  getSessionDraft: (sessionId: string) => string;
+  setSessionDraft: (sessionId: string, draft: string) => void;
   displayedSessionIdRef: MutableRefObject<string | null>;
   setLiveSessionMessages: Dispatch<SetStateAction<Message[]>>;
-  setSessionStateForSession: (sid: string | null, next: SessionRuntimeState) => void;
+  setSessionStateForSession: (sessionId: string | null, next: SessionRuntimeState) => void;
   liveMessagesRef: MutableRefObject<Message[]>;
   nextIdRef: MutableRefObject<number>;
 };
 
 export const createSessionMessageHandlers = (deps: SessionMessageHandlerDeps): SessionMessageHandlers => {
   const {
-    sidRef,
+    sessionIdRef,
     getOrCreateSessionState,
     getOrCreateSessionMessages,
     setSessionMessages,
@@ -40,13 +40,13 @@ export const createSessionMessageHandlers = (deps: SessionMessageHandlerDeps): S
 
   const addMessageForSession = (role: Message["role"], content: string, codeReferences?: CodeReference[]) => {
     const id = `msg-${++nextIdRef.current}`;
-    const sid = sidRef.current;
-    const currentMessages = getOrCreateSessionMessages(sid);
+    const sessionId = sessionIdRef.current;
+    const currentMessages = getOrCreateSessionMessages(sessionId);
     const newMsg: Message = { id, role, content, codeReferences };
     const nextMessages = [...currentMessages, newMsg];
 
-    setSessionMessages(sid, nextMessages);
-    if (displayedSessionIdRef.current === sid) {
+    setSessionMessages(sessionId, nextMessages);
+    if (displayedSessionIdRef.current === sessionId) {
       setLiveSessionMessages([...nextMessages]);
       liveMessagesRef.current = nextMessages;
     }
@@ -56,15 +56,15 @@ export const createSessionMessageHandlers = (deps: SessionMessageHandlerDeps): S
   const appendAssistantTextForSession = (chunk: string) => {
     const sanitized = stripAnsi(chunk);
     if (!sanitized) return;
-    const sid = sidRef.current;
-    const state = getOrCreateSessionState(sid);
-    const currentMessages = getOrCreateSessionMessages(sid);
-    const currentDraft = getSessionDraft(sid);
+    const sessionId = sessionIdRef.current;
+    const state = getOrCreateSessionState(sessionId);
+    const currentMessages = getOrCreateSessionMessages(sessionId);
+    const currentDraft = getSessionDraft(sessionId);
     const nextDraft = currentDraft ? currentDraft + sanitized : sanitized;
-    setSessionDraft(sid, nextDraft);
+    setSessionDraft(sessionId, nextDraft);
     const last = currentMessages[currentMessages.length - 1];
     if (last?.role === "assistant") {
-      setSessionMessages(sid, [...currentMessages.slice(0, -1), { ...last, content: nextDraft }]);
+      setSessionMessages(sessionId, [...currentMessages.slice(0, -1), { ...last, content: nextDraft }]);
     } else {
       if (__DEV__ && currentDraft) {
         console.warn("[appendAssistantText] NEW assistant msg with existing draft!", {
@@ -78,24 +78,24 @@ export const createSessionMessageHandlers = (deps: SessionMessageHandlerDeps): S
       // Use nextDraft (full accumulated text) — not just sanitized (current chunk) —
       // so all previously streamed content is preserved when a non-assistant message
       // (e.g. system/tool) was inserted mid-stream.
-      setSessionMessages(sid, [...currentMessages, { id: `msg-${++nextIdRef.current}`, role: "assistant", content: nextDraft }]);
+      setSessionMessages(sessionId, [...currentMessages, { id: `msg-${++nextIdRef.current}`, role: "assistant", content: nextDraft }]);
     }
 
     state.sessionState = "running";
-    const nextMessages = getOrCreateSessionMessages(sid);
-    if (displayedSessionIdRef.current === sid) {
+    const nextMessages = getOrCreateSessionMessages(sessionId);
+    if (displayedSessionIdRef.current === sessionId) {
       setLiveSessionMessages([...nextMessages]);
-      setSessionStateForSession(sid, "running");
+      setSessionStateForSession(sessionId, "running");
       liveMessagesRef.current = nextMessages;
     }
   };
 
   const finalizeAssistantMessageForSession = () => {
-    const sid = sidRef.current;
-    const state = getOrCreateSessionState(sid);
-    const currentMessages = getOrCreateSessionMessages(sid);
-    const raw = getSessionDraft(sid);
-    const cleaned = stripTrailingIncompleteTag(raw ?? "");
+    const sessionId = sessionIdRef.current;
+    const state = getOrCreateSessionState(sessionId);
+    const currentMessages = getOrCreateSessionMessages(sessionId);
+    const draftText = getSessionDraft(sessionId);
+    const cleaned = stripTrailingIncompleteTag(draftText ?? "");
 
     // Always sync the last assistant message with the full cleaned draft.
     // This ensures content is correct even if a mid-stream non-assistant message
@@ -110,7 +110,7 @@ export const createSessionMessageHandlers = (deps: SessionMessageHandlerDeps): S
         // It's possible the draft was already cleared by a prior finalize call,
         // in which case we don't want to delete the completed message.
         if (existingContentTrimmed === "") {
-          setSessionMessages(sid, currentMessages.slice(0, -1));
+          setSessionMessages(sessionId, currentMessages.slice(0, -1));
         }
       } else if (last.content !== cleaned) {
         if (__DEV__) {
@@ -119,22 +119,22 @@ export const createSessionMessageHandlers = (deps: SessionMessageHandlerDeps): S
             draftLen: cleaned.length,
           });
         }
-        setSessionMessages(sid, [...currentMessages.slice(0, -1), { ...last, content: cleaned }]);
+        setSessionMessages(sessionId, [...currentMessages.slice(0, -1), { ...last, content: cleaned }]);
       }
     }
 
-    const afterTrimMessages = getOrCreateSessionMessages(sid);
+    const afterTrimMessages = getOrCreateSessionMessages(sessionId);
     const lastAfterTrim = afterTrimMessages[afterTrimMessages.length - 1];
     if (lastAfterTrim?.role === "assistant" && (lastAfterTrim.content ?? "").trim() === "") {
-      setSessionMessages(sid, afterTrimMessages.slice(0, -1));
+      setSessionMessages(sessionId, afterTrimMessages.slice(0, -1));
     }
 
-    setSessionDraft(sid, "");
-    const finalMessages = getOrCreateSessionMessages(sid);
+    setSessionDraft(sessionId, "");
+    const finalMessages = getOrCreateSessionMessages(sessionId);
     state.sessionState = "idle";
-    if (displayedSessionIdRef.current === sid) {
+    if (displayedSessionIdRef.current === sessionId) {
       setLiveSessionMessages([...finalMessages]);
-      setSessionStateForSession(sid, "idle");
+      setSessionStateForSession(sessionId, "idle");
       liveMessagesRef.current = finalMessages;
     }
   };

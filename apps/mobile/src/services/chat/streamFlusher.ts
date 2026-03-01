@@ -9,10 +9,10 @@
  * tested independently and the hook stays focused on React state.
  */
 
-export const STREAM_FLUSH_INTERVAL_MS = 50;
-export const STREAM_FLUSH_INTERVAL_LARGE_MS = 95;
-export const STREAM_FLUSH_DRAFT_THRESHOLD = 2400;
-export const STREAM_BOUNDARY_MARKER = /[.!?;,\n]/;
+const STREAM_FLUSH_INTERVAL_MS = 50;
+const STREAM_FLUSH_INTERVAL_LARGE_MS = 95;
+const STREAM_FLUSH_DRAFT_THRESHOLD = 2400;
+const STREAM_BOUNDARY_MARKER = /[.!?;,\n]/;
 
 export type StreamFlushContext = {
   /** Flush any accumulated text immediately. */

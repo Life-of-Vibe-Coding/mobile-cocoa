@@ -261,6 +261,7 @@ export function useChat(options: UseChatOptions = {}) {
     skipReplayForSessionRef,
     addMessage,
     setSessionId,
+    setLiveSessionMessages,
     setWaitingForUserInput,
     setPermissionDenials,
     setPendingAskQuestion,

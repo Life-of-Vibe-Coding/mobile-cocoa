@@ -4,7 +4,7 @@
 
 ## Function
 
-Shared utility functions used across the server: ANSI stripping, workspace file tree building, path security, MIME types, git operations, and process discovery.
+Shared utility functions used across the server: preview/overlay resolution, workspace file tree building, path security, MIME types, git operations, and process discovery.
 
 ---
 
@@ -16,7 +16,6 @@ Shared utility functions used across the server: ANSI stripping, workspace file 
 |----------|-------------|
 | `getPreviewHost()` | Resolves preview host for system prompt injection. Priority: `PREVIEW_HOST` env → tunnel proxy marker → `"(not set)"` |
 | `getActiveOverlay()` | Returns `"tunnel"` or `"none"` |
-| `stripAnsi(str)` | Removes ANSI escape codes from strings |
 | `killProcessOnPort(port)` | Kills any process on a port (via `lsof`/`kill`) |
 | `buildWorkspaceTree(dirPath, basePath)` | Recursive directory listing as JSON tree. Skips `node_modules`, `.git`, `dist`, etc. |
 | `IMAGE_EXT` | Set of image extensions |
@@ -58,12 +57,9 @@ Shared utility functions used across the server: ANSI stripping, workspace file 
 ## How to Use
 
 ```js
-import { stripAnsi, buildWorkspaceTree, resolveWithinRoot } from "./server/utils/index.js";
+import { buildWorkspaceTree, resolveWithinRoot } from "./server/utils/index.js";
 import { getGitStatus, gitAdd, gitCommit } from "./server/utils/git.js";
 import { listProcessesOnPorts, killProcess } from "./server/utils/processes.js";
-
-// Strip ANSI from AI output
-const clean = stripAnsi("\x1b[32mHello\x1b[0m");
 
 // Build file tree
 const tree = buildWorkspaceTree("/path/to/workspace");

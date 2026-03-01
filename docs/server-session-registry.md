@@ -20,12 +20,10 @@ Global in-memory registry mapping `sessionId → session state`. Manages the lif
 |----------|-----------|-------------|
 | `createSession` | `(sessionId, provider, model, options?)` | Creates session with process manager, returns existing if ID already registered |
 | `getSession` | `(sessionId)` | Direct lookup by exact ID |
-| `getAllSessions` | `()` | Returns all active sessions (for merging with disk-based list) |
 | `resolveSession` | `(sessionId)` | Fuzzy lookup — tries exact match, then UUID suffix match |
 | `migrateSessionId` | `(fromId, toId)` | Re-keys session when Pi emits its native session ID |
 | `removeSession` | `(sessionId)` | Kills process, closes SSE subscribers, deletes from registry |
 | `subscribeToSession` | `(sessionId, res)` | Adds Express `Response` to SSE subscriber set |
-| `unsubscribeFromSession` | `(sessionId, res)` | Removes from subscriber set |
 
 ## Session Shape
 

@@ -159,6 +159,7 @@ export function useSessionCache({
           setLiveSessionMessages([]);
           liveMessagesRef.current = [];
         }
+        outputBufferRef.current = "";
         setSessionState("idle");
         setWaitingForUserInput(false);
       }

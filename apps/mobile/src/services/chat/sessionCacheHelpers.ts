@@ -8,10 +8,10 @@ export const MAX_CACHED_SESSIONS = 15;
 const sessionAccessOrder: string[] = [];
 
 /** Mark a session as recently used (moves it to the end of the LRU list). */
-export const touchSession = (sid: string): void => {
-  const idx = sessionAccessOrder.indexOf(sid);
-  if (idx >= 0) sessionAccessOrder.splice(idx, 1);
-  sessionAccessOrder.push(sid);
+export const touchSession = (sessionId: string): void => {
+  const existingIndex = sessionAccessOrder.indexOf(sessionId);
+  if (existingIndex >= 0) sessionAccessOrder.splice(existingIndex, 1);
+  sessionAccessOrder.push(sessionId);
 };
 
 /** Evict oldest sessions from all cache maps until we're at or below the limit. */
@@ -46,66 +46,67 @@ export const _resetAccessOrder = (): void => {
 
 // ── Session State Helpers ────────────────────────────────────────────────
 
-export const getOrCreateSessionState = (sessionStates: Map<string, SessionLiveState>, sid: string): SessionLiveState => {
-  let state = sessionStates.get(sid);
+export const getOrCreateSessionState = (sessionStates: Map<string, SessionLiveState>, sessionId: string): SessionLiveState => {
+  let state = sessionStates.get(sessionId);
   if (!state) {
     state = { sessionState: "idle" };
-    sessionStates.set(sid, state);
+    sessionStates.set(sessionId, state);
   }
   return state;
 };
 
-export const getOrCreateSessionMessages = (sessionMessages: Map<string, Message[]>, sid: string): Message[] => {
-  let messages = sessionMessages.get(sid);
+export const getOrCreateSessionMessages = (sessionMessages: Map<string, Message[]>, sessionId: string): Message[] => {
+  let messages = sessionMessages.get(sessionId);
   if (!messages) {
     messages = [];
-    sessionMessages.set(sid, messages);
+    sessionMessages.set(sessionId, messages);
   }
   return messages;
 };
 
-export const getSessionDraft = (sessionDrafts: Map<string, string>, sid: string): string => sessionDrafts.get(sid) ?? "";
+export const getSessionDraft = (sessionDrafts: Map<string, string>, sessionId: string): string =>
+  sessionDrafts.get(sessionId) ?? "";
 
-export const setSessionDraft = (sessionDrafts: Map<string, string>, sid: string, draft: string): void => {
+export const setSessionDraft = (sessionDrafts: Map<string, string>, sessionId: string, draft: string): void => {
   if (draft.length > 0) {
-    sessionDrafts.set(sid, draft);
+    sessionDrafts.set(sessionId, draft);
     return;
   }
-  sessionDrafts.delete(sid);
+  sessionDrafts.delete(sessionId);
 };
 
-export const setSessionMessages = (sessionMessages: Map<string, Message[]>, sid: string, messages: Message[]): void => {
-  sessionMessages.set(sid, messages);
+export const setSessionMessages = (sessionMessages: Map<string, Message[]>, sessionId: string, messages: Message[]): void => {
+  sessionMessages.set(sessionId, messages);
 };
 
 export const moveSessionCacheData = (
-  currentSid: string,
-  nextSid: string,
+  currentSessionId: string,
+  nextSessionId: string,
   sessionStates: Map<string, SessionLiveState>,
   sessionMessages: Map<string, Message[]>,
   sessionDrafts: Map<string, string>,
 ): void => {
-  const state = sessionStates.get(currentSid);
-  const messages = sessionMessages.get(currentSid);
-  const draft = sessionDrafts.get(currentSid);
+  const state = sessionStates.get(currentSessionId);
+  const messages = sessionMessages.get(currentSessionId);
+  const draft = sessionDrafts.get(currentSessionId);
 
   if (state) {
-    sessionStates.delete(currentSid);
-    sessionStates.set(nextSid, state);
+    sessionStates.delete(currentSessionId);
+    sessionStates.set(nextSessionId, state);
   }
   if (messages) {
-    sessionMessages.delete(currentSid);
-    sessionMessages.set(nextSid, messages);
+    sessionMessages.delete(currentSessionId);
+    sessionMessages.set(nextSessionId, messages);
   }
   if (draft !== undefined) {
-    sessionDrafts.delete(currentSid);
-    sessionDrafts.set(nextSid, draft);
+    sessionDrafts.delete(currentSessionId);
+    sessionDrafts.set(nextSessionId, draft);
   }
   // Update LRU order for the rekey
-  const idx = sessionAccessOrder.indexOf(currentSid);
-  if (idx >= 0) {
-    sessionAccessOrder[idx] = nextSid;
+  const existingIndex = sessionAccessOrder.indexOf(currentSessionId);
+  if (existingIndex >= 0) {
+    sessionAccessOrder[existingIndex] = nextSessionId;
   } else {
-    sessionAccessOrder.push(nextSid);
+    sessionAccessOrder.push(nextSessionId);
   }
 };
