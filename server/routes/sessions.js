@@ -478,14 +478,14 @@ export function registerSessionsRoutes(app) {
                             pendingDeltaText = "";
                         }
 
-                        // Deduplicate identical user messages sent in the same cluster 
-                        // (from message_start, message_end, and message eventually)
-                        if (messages.length > 0) {
-                            const lastMsg = messages[messages.length - 1];
-                            if (lastMsg.role === "user" && lastMsg.content === contentStr) {
-                                continue; // Skip duplicate
-                            }
-                        }
+                        // Deduplicate: skip if any existing user message already has this content.
+                        // This handles: (a) repeated message_start/message_end/message events for
+                        // the same turn, and (b) Pi re-logging the user message after we pre-wrote
+                        // it to the JSONL at session creation time.
+                        const isDuplicate = messages.some(
+                            (m) => m.role === "user" && m.content === contentStr
+                        );
+                        if (isDuplicate) continue;
 
                         // A user message flushes any pending assistant chunks into a new assistant message
                         if (pendingAssistantContent.length > 0) {
@@ -637,6 +637,7 @@ export function registerSessionsRoutes(app) {
         const activeOnly = req.query.activeOnly === "1" || req.query.activeOnly === "true";
         const skipReplay = req.query.skipReplay === "1" || req.query.skipReplay === "true";
         const processRunning = session.processManager.processRunning?.() || false;
+        console.log(`[SSE][DIAG] /${sessionId}/stream connected. activeOnly=${activeOnly}, skipReplay=${skipReplay}, processRunning=${processRunning}, subscribers=${session.subscribers.size}`);
         let sentLines = 0;
         // Replay history from disk unless client already has it (skipReplay=1 when resuming with preseeded messages)
         if (!skipReplay && !sessionId.startsWith("temp-")) {
@@ -662,6 +663,7 @@ export function registerSessionsRoutes(app) {
         }
         if (activeOnly && !processRunning) {
             // Race: mobile connects before Pi emits agent_start. Poll briefly for process to start.
+            console.log(`[SSE][DIAG] /${sessionId}/stream: activeOnly+notRunning → entering poll loop`);
             const maxWaitMs = 6000;
             const pollMs = 150;
             const start = Date.now();

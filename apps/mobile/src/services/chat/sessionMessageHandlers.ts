@@ -62,6 +62,22 @@ export const createSessionMessageHandlers = (deps: SessionMessageHandlerDeps): S
     const currentDraft = getSessionDraft(sid);
     const nextDraft = currentDraft ? currentDraft + sanitized : sanitized;
 
+    // DIAG: Trace the session ID gate
+    if (__DEV__) {
+      const displayedSid = displayedSessionIdRef.current;
+      const sidsMatch = displayedSid === sid;
+      if (!sidsMatch || nextDraft.length <= 50) {
+        console.log("[appendAssistantText][DIAG]", {
+          sid,
+          displayedSid,
+          sidsMatch,
+          chunkLen: sanitized.length,
+          nextDraftLen: nextDraft.length,
+          willRender: sidsMatch,
+        });
+      }
+    }
+
     setSessionDraft(sid, nextDraft);
     const last = currentMessages[currentMessages.length - 1];
     if (last?.role === "assistant") {

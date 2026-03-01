@@ -271,7 +271,15 @@ export function useChat(options: UseChatOptions = {}) {
         nextIdRef.current = Math.max(nextIdRef.current, maxN);
         const deduped = deduplicateMessageIds(initialMessages);
         setSessionMessages(sid, [...deduped]);
-        setSessionDraft(sid, "");
+        // When the session is running and the last message is from the assistant,
+        // initialize the draft with that content so incoming SSE deltas append
+        // to it instead of replacing it. Without this, the first live delta
+        // overwrites the REST-loaded assistant content with just the new chunk.
+        const lastMsg = deduped[deduped.length - 1];
+        const seedDraft = shouldRun && lastMsg?.role === "assistant" && typeof lastMsg.content === "string"
+          ? lastMsg.content
+          : "";
+        setSessionDraft(sid, seedDraft);
         setLiveSessionMessages([...deduped]);
         liveMessagesRef.current = deduped;
         skipReplayForSessionRef.current = sid;

@@ -573,7 +573,21 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
         try {
           const parsed = JSON.parse(clean);
 
+          // DIAG: Log every parsed SSE event to trace what's arriving
+          if (__DEV__) {
+            const parsedType = typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>).type : "(non-object)";
+            const isProv = isProviderStream(parsed);
+            console.log("[sse][DIAG] parsed event", {
+              type: parsedType,
+              isProviderStream: isProv,
+              displayedSid: displayedSessionIdRef.current,
+              connectionSid: connectionSessionIdRef.current,
+              sidsMatch: displayedSessionIdRef.current === connectionSessionIdRef.current,
+            });
+          }
+
           if (parsed.type === "session-started") {
+            if (__DEV__) console.log("[sse][DIAG] session-started matched", { displayedSid: displayedSessionIdRef.current, connSid: connectionSessionIdRef.current });
             hasStreamEndedRef.current = false;
             setLastSessionTerminated(false);
             if (displayedSessionIdRef.current === connectionSessionIdRef.current) {
@@ -595,6 +609,7 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
           }
 
           if (parsed.type === "session" && typeof parsed.id === "string" && !parsed.id.startsWith("temp-")) {
+            if (__DEV__) console.log("[sse][DIAG] session rekey", { from: connectionSessionIdRef.current, to: parsed.id });
             setSessionIdWithRekey(parsed.id);
             continue;
           }
@@ -617,6 +632,7 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
               });
             }
           } else if (typeof parsed === "object" && parsed != null && "type" in parsed) {
+            if (__DEV__) console.log("[sse][DIAG] typed event skipped (not provider stream)", { type: (parsed as Record<string, unknown>).type });
             continue;
           } else {
             try {

@@ -542,15 +542,20 @@ export function createPiRpcSession({
     });
 
     openPiIoOutputStream();
-    // No temp folders: Pi writes to .pi/sessions; we only emit to socket
-    socket.emit("session-started", {
+    // Emit session-started via emitOutputLine so the type field is embedded in the JSON body.
+    // socket.emit("session-started", data) only passes the data object to SSE — the event name
+    // is lost. The mobile SSE client detects this by parsed.type === "session-started",
+    // so we must include type in the payload. The web Socket.IO client receives "output" events
+    // and checks for parsed.type as well, so this format works for both transports.
+    emitOutputLine(JSON.stringify({
+      type: "session-started",
       provider: options.clientProvider ?? sessionManagement?.provider ?? "claude",
       session_id: null,
       permissionMode: null,
       allowedTools: [],
       useContinue: !!hasCompletedFirstRunRef?.value,
       approvalMode: null,
-    });
+    }) + "\n");
 
     sendCommand({ type: "prompt", message: prompt });
   }
