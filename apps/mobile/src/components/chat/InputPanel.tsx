@@ -48,7 +48,7 @@ function InputWrapper({ width, height, isDark, theme }: { width: number; height:
         left: 0,
         backgroundColor: theme.colors.surfaceAlt,
         borderRadius: 32,
-        borderWidth: 1,
+        borderWidth: Platform.OS === "android" ? 0 : StyleSheet.hairlineWidth,
         borderColor: theme.colors.border,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
@@ -233,7 +233,10 @@ export function InputPanel({
     <Box>
       <VStack
         space="md"
-        className="flex-col gap-3 py-3 px-4 mt-6"
+        className={cn(
+          "flex-col gap-3 px-4 mt-6",
+          Platform.OS === "android" ? "py-4 pb-5" : "py-3"
+        )}
         onLayout={(e) => setPanelSize(e.nativeEvent.layout)}
         style={{ backgroundColor: "transparent" }}
       >
@@ -331,7 +334,7 @@ export function InputPanel({
           <Textarea
             size="md"
             isDisabled={disabled}
-            className="flex-1 min-h-10 h-auto min-w-0 w-full"
+            className="flex-1 min-h-10 h-auto min-w-0 w-full border-0"
             style={{
               backgroundColor: "transparent",
               borderWidth: 0,
@@ -347,7 +350,10 @@ export function InputPanel({
               editable={!disabled}
               multiline
               scrollEnabled={inputHeight >= MAX_INPUT_HEIGHT}
-              showsVerticalScrollIndicator={false}
+              className={cn(
+                "w-full min-w-0 text-base py-0 mt-0 mb-0 min-h-6 flex-none",
+                Platform.OS === "android" && "py-0 my-0 align-top"
+              )}
               style={{
                 color: inputTextColor,
                 maxHeight: MAX_INPUT_HEIGHT,
@@ -355,6 +361,9 @@ export function InputPanel({
                 width: "100%",
                 minWidth: 0,
                 overflow: "hidden",
+                paddingTop: 8,
+                paddingBottom: 8,
+                lineHeight: LINE_HEIGHT,
               }}
               onContentSizeChange={handleContentSizeChange}
               maxLength={8000}
@@ -365,10 +374,6 @@ export function InputPanel({
               autoCorrect
               autoComplete="off"
               textAlignVertical="top"
-              className={cn(
-                "w-full min-w-0 text-base py-2 min-h-6 flex-none",
-                Platform.OS === "android" && "text-start"
-              )}
               placeholderTextColor={placeholderColor}
             />
           </Textarea>

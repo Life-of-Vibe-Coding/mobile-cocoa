@@ -45,7 +45,7 @@ export function ChatPageShell({
         <StatusBar style={isDark ? "light" : "dark"} />
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         >
           <Box className="flex-1 flex-col px-6 pt-0">
