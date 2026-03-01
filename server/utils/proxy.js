@@ -24,7 +24,7 @@ import {
   PROXY_DEFAULT_TARGET_PORT,
   PROXY_LOOPBACK_HOST,
   TUNNEL_PROXY_PORT,
-} from "./config/index.js";
+} from "../config/index.js";
 
 const PROXY_PORT = TUNNEL_PROXY_PORT;
 const DEFAULT_TARGET_PORT = PROXY_DEFAULT_TARGET_PORT;

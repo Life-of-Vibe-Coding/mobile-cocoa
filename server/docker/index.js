@@ -329,3 +329,52 @@ export async function pruneVolumes() {
   if (!d) throw new Error(DOCKER_UNAVAILABLE_MSG);
   return d.pruneVolumes();
 }
+
+// ---------------------------------------------------------------------------
+// Diagnostics
+// ---------------------------------------------------------------------------
+
+/**
+ * Build diagnostic information about Docker connectivity.
+ * @param {boolean} enableDockerManager - Whether management is enabled
+ */
+export async function buildDiagnostic(enableDockerManager = true) {
+  const candidates = resolveSocketPath();
+  const diag = {
+    ENABLE_DOCKER_MANAGER: !!enableDockerManager,
+    DOCKER_SOCKET: process.env.DOCKER_SOCKET ?? null,
+    platform: process.platform,
+    home: os.homedir(),
+    sockets: [],
+    dockerClient: null,
+    listContainers: null,
+  };
+
+  for (const p of candidates) {
+    let exists = false, isSocket = false, err = null;
+    try {
+      exists = fs.existsSync(p);
+      if (exists) isSocket = fs.statSync(p).isSocket();
+    } catch (e) {
+      err = e?.message;
+    }
+    diag.sockets.push({ path: p, exists, isSocket, error: err });
+  }
+
+  try {
+    const client = getDocker();
+    if (client) {
+      diag.dockerClient = "created";
+      const raw = await client.listContainers({ all: true });
+      diag.listContainers = { ok: true, count: raw.length };
+    } else {
+      diag.dockerClient = "no_valid_socket";
+    }
+  } catch (e) {
+    diag.dockerClient = diag.dockerClient ?? "error";
+    diag.listContainersError = e?.message ?? String(e);
+  }
+
+  return diag;
+}
+

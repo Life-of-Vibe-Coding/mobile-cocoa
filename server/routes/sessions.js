@@ -12,9 +12,7 @@ import {
 import { formatSessionLogTimestamp } from "../process/index.js";
 import { createSession, getSession, removeSession, resolveSession, subscribeToSession } from "../sessionRegistry.js";
 import {
-    extractMessageContent,
     uuidFromFileStem,
-    mapProvider,
     normalizeProvider,
     deriveCwdFromFilePath,
     parseSessionMetadata,
@@ -24,8 +22,8 @@ import {
     findJsonlInDir,
     resolveSessionFilePath,
     createNewSessionFile,
-    slimReplayLine,
-    replayHistoryToResponse
+    replayHistoryToResponse,
+    parseMessagesFromJsonl,
 } from "./sessionHelpers.js";
 
 const DEFAULT_SESSION_PROVIDER = DEFAULT_PROVIDER;
@@ -35,6 +33,52 @@ const DEFAULT_SESSION_MODEL = DEFAULT_PROVIDER_MODELS?.[DEFAULT_SESSION_PROVIDER
 const SSE_PROCESS_START_WAIT_MS = 6_000;
 /** Interval in ms to poll for process start during active-only SSE connections. */
 const SSE_PROCESS_START_POLL_MS = 150;
+
+/**
+ * Find an existing session or create (and optionally replace) one.
+ * Writes the user prompt to the JSONL immediately so GET /messages can find it
+ * during streaming — Pi may not log the user message until many events later.
+ * @returns {{ session: object, sessionId: string }}
+ */
+function findOrCreateSession(payload, provider, model, prompt, sessionCwd) {
+    let sessionId = payload.sessionId;
+    if (!sessionId || typeof sessionId !== "string" || sessionId.startsWith("temp-")) {
+        sessionId = null;
+    }
+
+    let session = sessionId ? getSession(sessionId) : null;
+
+    if (!session || payload.replaceRunning) {
+        if (session) removeSession(sessionId);
+        if (!sessionId) sessionId = crypto.randomUUID();
+
+        let existingPath = resolveSessionFilePath(sessionId);
+        if (!existingPath) existingPath = createNewSessionFile(sessionId, sessionCwd);
+
+        // Pre-write the user prompt to the JSONL so parseSessionMetadata
+        // and GET /messages can surface it immediately during streaming.
+        try {
+            const userMsgLine = JSON.stringify({
+                type: "message",
+                id: crypto.randomUUID(),
+                timestamp: new Date().toISOString(),
+                message: { role: "user", content: [{ type: "text", text: prompt }] },
+            }) + "\n";
+            fs.appendFileSync(existingPath, userMsgLine, "utf-8");
+        } catch (_) { /* non-fatal */ }
+
+        session = createSession(sessionId, provider, model, {
+            existingSessionPath: existingPath,
+            sessionLogTimestamp: formatSessionLogTimestamp(),
+        });
+    } else {
+        // Update provider/model if changed
+        session.provider = provider;
+        session.model = model;
+    }
+
+    return { session, sessionId };
+}
 
 export function registerSessionsRoutes(app) {
     const router = Router();
@@ -70,11 +114,10 @@ export function registerSessionsRoutes(app) {
     router.post("/new", (req, res) => {
         const sessionId = crypto.randomUUID();
         const filePath = createNewSessionFile(sessionId, getWorkspaceCwd());
-        const session = createSession(sessionId, DEFAULT_SESSION_PROVIDER, DEFAULT_SESSION_MODEL, {
+        createSession(sessionId, DEFAULT_SESSION_PROVIDER, DEFAULT_SESSION_MODEL, {
             existingSessionPath: filePath,
             sessionLogTimestamp: formatSessionLogTimestamp(),
         });
-        session.sessionLogTimestamp = formatSessionLogTimestamp();
         res.status(200).json({ sessionId, ok: true });
     });
 
@@ -119,58 +162,14 @@ export function registerSessionsRoutes(app) {
         const provider = normalizeProvider(payload?.provider);
         const model = payload.model;
         const prompt = typeof payload?.prompt === "string" ? payload.prompt.trim() : "";
-        // Per-session workspace: use payload.cwd if provided, otherwise fall back to global.
         const sessionCwd = (typeof payload?.cwd === "string" && payload.cwd.trim()) ? payload.cwd.trim() : getWorkspaceCwd();
 
         if (!prompt) {
-            res.status(400).json({ ok: false, error: "Prompt cannot be empty" });
-            return;
+            return res.status(400).json({ ok: false, error: "Prompt cannot be empty" });
         }
 
-        let sessionId = payload.sessionId;
-        if (!sessionId || typeof sessionId !== "string" || sessionId.startsWith("temp-")) {
-            sessionId = null;
-        }
+        const { session, sessionId } = findOrCreateSession(payload, provider, model, prompt, sessionCwd);
 
-        let session = sessionId ? getSession(sessionId) : null;
-        if (!session || payload.replaceRunning) {
-            if (session) {
-                removeSession(sessionId);
-            }
-            if (!sessionId) {
-                sessionId = crypto.randomUUID();
-            }
-            let existingPath = resolveSessionFilePath(sessionId);
-            if (!existingPath) {
-                existingPath = createNewSessionFile(sessionId, sessionCwd);
-            }
-            // Write the user prompt to the JSONL immediately so parseSessionMetadata
-            // and GET /messages can find it during streaming (Pi may not log the user
-            // message until thousands of streaming events later).
-            try {
-                const userMsgLine = JSON.stringify({
-                    type: "message",
-                    id: crypto.randomUUID(),
-                    timestamp: new Date().toISOString(),
-                    message: {
-                        role: "user",
-                        content: [{ type: "text", text: prompt }],
-                    },
-                }) + "\n";
-                fs.appendFileSync(existingPath, userMsgLine, "utf-8");
-            } catch (_) { /* non-fatal */ }
-            session = createSession(sessionId, provider, model, {
-                existingSessionPath: existingPath,
-                sessionLogTimestamp: formatSessionLogTimestamp(),
-            });
-            session.sessionLogTimestamp = formatSessionLogTimestamp();
-        } else {
-            // Update provider/model if changed
-            session.provider = provider;
-            session.model = model;
-        }
-
-        // Process manager logic
         try {
             session.processManager.handleSubmitPrompt(payload, req.headers.host);
             res.status(200).json({ sessionId, ok: true });
@@ -245,11 +244,6 @@ export function registerSessionsRoutes(app) {
 
     // POST /api/sessions/:sessionId/finished - Client notifies that it has observed the session as idle/finished
     router.post("/:sessionId/finished", (req, res) => {
-        const { sessionId } = req.params;
-        const activeSession = resolveSession(sessionId);
-        if (activeSession) {
-            // Optional: server could update last-seen-idle or clear client state here
-        }
         res.json({ ok: true });
     });
 
@@ -262,134 +256,13 @@ export function registerSessionsRoutes(app) {
         }
         const canonicalSessionId = uuidFromFileStem(path.basename(filePath, ".jsonl"));
         try {
-            const raw = fs.readFileSync(filePath, "utf-8");
-            const lines = raw.split("\n").filter((l) => l.trim());
-
-            const messages = [];
-            let idx = 0;
-            let pendingAssistantContent = [];
-            // Accumulates text from message_update streaming deltas (e.g. Codex, Claude).
-            // These are small fragments that must be concatenated to reconstruct the full
-            // assistant message when the session file only contains streaming events so far.
-            let pendingDeltaText = "";
-
-            for (const line of lines) {
-                try {
-                    const obj = JSON.parse(line);
-                    if (!obj) continue;
-
-                    // ── Handle message_update streaming deltas ───────────────
-                    // Providers like Codex stream assistant content as message_update
-                    // events with assistantMessageEvent deltas, rather than emitting
-                    // a complete message/message_end with full content.
-                    if (obj.type === "message_update" && obj.assistantMessageEvent) {
-                        const evt = obj.assistantMessageEvent;
-                        // Regular text deltas (main response content — Codex uses "text_delta")
-                        if ((evt.type === "text_delta" || evt.type === "delta") && typeof evt.delta === "string") {
-                            pendingDeltaText += evt.delta;
-                        }
-                        // Claude-style content_block_delta with nested text
-                        if (evt.type === "content_block_delta" && typeof evt.delta?.text === "string") {
-                            pendingDeltaText += evt.delta.text;
-                        }
-                        // Thinking blocks — reconstruct the <think>...</think> wrappers
-                        // to match the format the mobile eventDispatcher produces during live streaming.
-                        if (evt.type === "thinking_start") {
-                            pendingDeltaText += "<think>\n";
-                        }
-                        if (evt.type === "thinking_delta" && typeof evt.delta === "string") {
-                            pendingDeltaText += evt.delta;
-                        }
-                        if (evt.type === "thinking_end") {
-                            pendingDeltaText += "\n</think>\n\n";
-                        }
-                        continue;
-                    }
-
-                    // ── Handle standard message/message_start/message_end ────
-                    if (
-                        !["message", "message_start", "message_end"].includes(obj.type) ||
-                        !obj.message
-                    )
-                        continue;
-
-                    const m = obj.message;
-                    const role = m.role;
-
-                    // Ensure we only process valid roles
-                    if (role !== "user" && role !== "assistant") continue;
-
-                    // Skip assistant message start/end/regular if content array is empty (which happens with streaming sometimes)
-                    if (role === "assistant" && (!m.content || m.content.length === 0))
-                        continue;
-
-                    // Check if there is actual content after extraction
-                    const contentStr = extractMessageContent(m.content).trim();
-                    if (!contentStr) continue;
-
-                    if (role === "user") {
-                        // Flush any accumulated delta text before the user message
-                        if (pendingDeltaText) {
-                            pendingAssistantContent.push(pendingDeltaText);
-                            pendingDeltaText = "";
-                        }
-
-                        // Deduplicate: skip if any existing user message already has this content.
-                        // This handles: (a) repeated message_start/message_end/message events for
-                        // the same turn, and (b) Pi re-logging the user message after we pre-wrote
-                        // it to the JSONL at session creation time.
-                        const isDuplicate = messages.some(
-                            (m) => m.role === "user" && m.content === contentStr
-                        );
-                        if (isDuplicate) continue;
-
-                        // A user message flushes any pending assistant chunks into a new assistant message
-                        if (pendingAssistantContent.length > 0) {
-                            messages.push({
-                                id: `msg-${++idx}`,
-                                role: "assistant",
-                                content: pendingAssistantContent.join("\n\n").trim(),
-                            });
-                            pendingAssistantContent = []; // reset for the next assistant turn
-                        }
-
-                        messages.push({
-                            id: `msg-${++idx}`,
-                            role: "user",
-                            content: contentStr,
-                        });
-                    } else {
-                        // role === 'assistant'
-                        // Flush any accumulated delta text into assistant content first
-                        if (pendingDeltaText) {
-                            pendingAssistantContent.push(pendingDeltaText);
-                            pendingDeltaText = "";
-                        }
-                        pendingAssistantContent.push(contentStr);
-                    }
-                } catch (_) {
-                    /* skip malformed lines */
-                }
-            }
-
-            // Flush any remaining delta text
-            if (pendingDeltaText) {
-                pendingAssistantContent.push(pendingDeltaText);
-                pendingDeltaText = "";
-            }
-            if (pendingAssistantContent.length > 0) {
-                messages.push({
-                    id: `msg-${++idx}`,
-                    role: "assistant",
-                    content: pendingAssistantContent.join("\n\n").trim(),
-                });
-            }
+            const messages = parseMessagesFromJsonl(filePath);
             const { provider, modelId, cwd } = parseSessionMetadata(filePath);
             const activeSession = resolveSession(sessionId) || resolveSession(canonicalSessionId);
             const running = activeSession?.processManager?.processRunning?.() ?? false;
             const sseConnected = activeSession ? activeSession.subscribers?.size > 0 : false;
             // When session is running, registry may have migrated to a different id (e.g. Pi session_id).
-            // Return that id so the client connects to the correct stream and does not open a duplicate that gets "end".
+            // Return that id so the client connects to the correct stream and does not open a duplicate.
             const activeSessionId = activeSession?.id ?? canonicalSessionId;
             res.json({
                 messages,
@@ -454,13 +327,12 @@ export function registerSessionsRoutes(app) {
         const activeOnly = req.query.activeOnly === "1" || req.query.activeOnly === "true";
         const skipReplay = req.query.skipReplay === "1" || req.query.skipReplay === "true";
         const processRunning = session.processManager.processRunning?.() || false;
-        let sentLines = 0;
         // Replay history from disk unless client already has it (skipReplay=1 when resuming with preseeded messages)
         if (!skipReplay && !sessionId.startsWith("temp-")) {
             const filePath = session.existingSessionPath && fs.existsSync(session.existingSessionPath)
                 ? session.existingSessionPath
                 : resolveSessionFilePath(sessionId);
-            sentLines = replayHistoryToResponse(filePath, res);
+            replayHistoryToResponse(filePath, res);
         }
         if (activeOnly && !processRunning) {
             // Race: mobile connects before Pi emits agent_start. Poll briefly for process to start.

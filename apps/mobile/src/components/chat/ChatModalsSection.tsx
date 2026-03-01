@@ -1,7 +1,7 @@
 import React from "react";
 
 import { AskQuestionModal } from "@/components/chat/AskQuestionModal";
-import { ModelPickerSheet } from "@/components/components/ModelPickerSheet";
+import { ModelPickerSheet } from "@/components/chat/ModelPickerSheet";
 import { DockerManagerModal } from "@/components/docker/DockerManagerModal";
 import { useChatModalsController } from "@/components/hooks/useChatModalsController";
 import type { ChatPageContext, ChatPageModals } from "@/components/pages/ChatPage";

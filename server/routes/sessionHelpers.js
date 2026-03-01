@@ -230,3 +230,92 @@ export function replayHistoryToResponse(filePath, res) {
         return 0;
     }
 }
+
+/**
+ * Parse a session JSONL file into an array of {id, role, content} message objects.
+ * Handles streaming deltas (Codex/Claude), thinking blocks, deduplication, and flush.
+ * @param {string} filePath - Absolute path to the .jsonl session file
+ * @returns {{ id: string, role: string, content: string }[]}
+ */
+export function parseMessagesFromJsonl(filePath) {
+    const raw = fs.readFileSync(filePath, "utf-8");
+    const lines = raw.split("\n").filter((l) => l.trim());
+
+    const messages = [];
+    let idx = 0;
+    let pendingAssistantContent = [];
+    let pendingDeltaText = "";
+
+    for (const line of lines) {
+        try {
+            const obj = JSON.parse(line);
+            if (!obj) continue;
+
+            // ── Handle message_update streaming deltas ───────────────
+            // Providers like Codex/Claude stream via message_update events with
+            // assistantMessageEvent deltas rather than complete message objects.
+            if (obj.type === "message_update" && obj.assistantMessageEvent) {
+                const evt = obj.assistantMessageEvent;
+                // Regular text deltas (Codex uses "text_delta")
+                if ((evt.type === "text_delta" || evt.type === "delta") && typeof evt.delta === "string") {
+                    pendingDeltaText += evt.delta;
+                }
+                // Claude-style content_block_delta with nested text
+                if (evt.type === "content_block_delta" && typeof evt.delta?.text === "string") {
+                    pendingDeltaText += evt.delta.text;
+                }
+                // Thinking blocks — reconstruct <think>...</think> wrappers
+                if (evt.type === "thinking_start") pendingDeltaText += "<think>\n";
+                if (evt.type === "thinking_delta" && typeof evt.delta === "string") pendingDeltaText += evt.delta;
+                if (evt.type === "thinking_end") pendingDeltaText += "\n</think>\n\n";
+                continue;
+            }
+
+            // ── Handle standard message/message_start/message_end ────
+            if (!["message", "message_start", "message_end"].includes(obj.type) || !obj.message) continue;
+
+            const m = obj.message;
+            const role = m.role;
+            if (role !== "user" && role !== "assistant") continue;
+            if (role === "assistant" && (!m.content || m.content.length === 0)) continue;
+
+            const contentStr = extractMessageContent(m.content).trim();
+            if (!contentStr) continue;
+
+            if (role === "user") {
+                // Flush any accumulated delta text before the user message
+                if (pendingDeltaText) {
+                    pendingAssistantContent.push(pendingDeltaText);
+                    pendingDeltaText = "";
+                }
+                // Deduplicate: skip if this user content was already pre-written to the JSONL
+                const isDuplicate = messages.some((msg) => msg.role === "user" && msg.content === contentStr);
+                if (isDuplicate) continue;
+
+                // Flush pending assistant chunks
+                if (pendingAssistantContent.length > 0) {
+                    messages.push({ id: `msg-${++idx}`, role: "assistant", content: pendingAssistantContent.join("\n\n").trim() });
+                    pendingAssistantContent = [];
+                }
+                messages.push({ id: `msg-${++idx}`, role: "user", content: contentStr });
+            } else {
+                // role === 'assistant': flush delta text then accumulate
+                if (pendingDeltaText) {
+                    pendingAssistantContent.push(pendingDeltaText);
+                    pendingDeltaText = "";
+                }
+                pendingAssistantContent.push(contentStr);
+            }
+        } catch (_) {
+            /* skip malformed lines */
+        }
+    }
+
+    // Final flush
+    if (pendingDeltaText) pendingAssistantContent.push(pendingDeltaText);
+    if (pendingAssistantContent.length > 0) {
+        messages.push({ id: `msg-${++idx}`, role: "assistant", content: pendingAssistantContent.join("\n\n").trim() });
+    }
+
+    return messages;
+}

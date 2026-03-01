@@ -1,6 +1,6 @@
-import { AppHeaderBar } from "@/components/components/AppHeaderBar";
-import { ChatInputDock } from "@/components/components/ChatInputDock";
-import { ChatMessageList } from "@/components/components/ChatMessageList";
+import { AppHeaderBar } from "@/components/chat/AppHeaderBar";
+import { ChatInputDock } from "@/components/chat/ChatInputDock";
+import { ChatMessageList } from "@/components/chat/ChatMessageList";
 import type { ChatPageContext, ChatPageConversation, ChatPageInputDock, ChatPageRuntime } from "@/components/pages/ChatPage";
 import { Box } from "@/components/ui/box";
 import type { getTheme } from "@/theme/index";

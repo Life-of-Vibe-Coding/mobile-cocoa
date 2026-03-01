@@ -223,10 +223,9 @@ export function resolveAgentDir(workspaceCwd, projectRoot) {
 
 /**
  * Get enabled skill IDs from persistence.
- * @param {string} agentDir - Resolved agent directory (ignored, stored globally now)
  * @returns {string[]}
  */
-export function getEnabledIds(agentDir) {
+export function getEnabledIds() {
   try {
     const enabledFile = getSkillsConfigValues().enabledFilePath;
     if (!fs.existsSync(enabledFile)) return [];
@@ -242,11 +241,10 @@ export function getEnabledIds(agentDir) {
 
 /**
  * Set enabled skill IDs in persistence.
- * @param {string} agentDir - Resolved agent directory (ignored, stored globally now)
  * @param {string[]} enabledIds - List of skill IDs to enable
  * @returns {{ ok: boolean; error?: string }}
  */
-export function setEnabledIds(agentDir, enabledIds) {
+export function setEnabledIds(enabledIds) {
   const normalized = Array.isArray(enabledIds)
     ? enabledIds.filter((x) => typeof x === "string" && x.trim())
     : [];

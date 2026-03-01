@@ -21,16 +21,14 @@ export function registerWorkspaceRoutes(app) {
 function resolveWorkspaceContext(baseParam, rootParam, parentParam) {
   const base = baseParam === "os" ? "os" : "workspace";
   let rootDir;
-  let candidate = null;
 
   if (base === "os") {
     rootDir = path.resolve("/");
   } else if (typeof rootParam === "string" && rootParam.trim()) {
-    candidate = path.resolve(rootParam.trim());
-    if (!candidate.startsWith(WORKSPACE_ALLOWED_ROOT) && candidate !== WORKSPACE_ALLOWED_ROOT) {
+    rootDir = path.resolve(rootParam.trim());
+    if (!rootDir.startsWith(WORKSPACE_ALLOWED_ROOT) && rootDir !== WORKSPACE_ALLOWED_ROOT) {
       throw { status: 403, error: "Root must be under allowed workspace" };
     }
-    rootDir = candidate;
   } else {
     rootDir = getWorkspaceCwd();
   }
@@ -54,7 +52,7 @@ function resolveWorkspaceContext(baseParam, rootParam, parentParam) {
     throw { status: 403, error: "Path outside allowed workspace" };
   }
 
-  return { base, rootDir, resolvedDir, candidate };
+  return { base, rootDir, resolvedDir };
 }
 
 function handleWorkspaceCreateFolder(req, res) {
@@ -103,21 +101,7 @@ export function createServeWorkspaceFileMiddleware() {
 
 function handleWorkspaceAllowedChildren(req, res) {
   try {
-    // Run preliminary validation from handleWorkspaceAllowedChildren
-    const base = req.query.base === "os" ? "os" : "workspace";
-    if (base !== "os" && typeof req.query.root === "string" && req.query.root.trim()) {
-      const candidate = path.resolve(req.query.root.trim());
-      if (candidate.startsWith(WORKSPACE_ALLOWED_ROOT) || candidate === WORKSPACE_ALLOWED_ROOT) {
-        if (!fs.existsSync(candidate)) {
-          return res.status(404).json({ error: "Path not found on server", children: [] });
-        }
-        if (!fs.statSync(candidate).isDirectory()) {
-          return res.status(400).json({ error: "Not a directory", children: [] });
-        }
-      }
-    }
-
-    const { rootDir, resolvedDir } = resolveWorkspaceContext(req.query.base, req.query.root, req.query.parent);
+    const { resolvedDir } = resolveWorkspaceContext(req.query.base, req.query.root, req.query.parent);
 
     if (!fs.existsSync(resolvedDir)) {
       return res.status(404).json({ error: "Path not found on server", children: [] });

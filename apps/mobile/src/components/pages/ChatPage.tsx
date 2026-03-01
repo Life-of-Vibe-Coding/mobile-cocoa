@@ -1,4 +1,4 @@
-import { ChatModalsSection } from "@/components/components/ChatModalsSection";
+import { ChatModalsSection } from "@/components/chat/ChatModalsSection";
 import type { CodeRefPayload } from "@/components/file/FileViewerModal";
 import { ChatPageShell } from "@/components/pages/ChatPageShell";
 import { FileViewerPage } from "@/components/pages/FileViewerPage";

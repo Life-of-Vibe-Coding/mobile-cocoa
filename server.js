@@ -2,7 +2,6 @@
  * Main server entry point.
  * Refactored into modular architecture for better maintainability.
  */
-import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 
@@ -11,6 +10,7 @@ import {
   ENABLE_DOCKER_MANAGER,
   PORT,
   SERVER_LISTEN_HOST,
+  getWorkspaceCwd,
 } from "./server/config/index.js";
 import { shutdown } from "./server/process/index.js";
 import { setupRoutes } from "./server/routes/index.js";
@@ -37,14 +37,14 @@ httpServer.listen(PORT, SERVER_LISTEN_HOST, () => {
   console.log(`Terminal server at ${baseUrl}`);
   console.log(`Health check page: ${baseUrl}/health`);
   console.log(`Health check alias: ${baseUrl}/health-check`);
-  console.log(`[Docker] ENABLE_DOCKER_MANAGER: ${ENABLE_DOCKER_MANAGER} (env raw: "${process.env.ENABLE_DOCKER_MANAGER ?? "(unset)"}")`);
+  console.log(`[Docker] ENABLE_DOCKER_MANAGER: ${ENABLE_DOCKER_MANAGER}`);
   console.log(`Overlay network: ${overlay}`);
   if (overlay === "tunnel") {
     console.log(`Tunnel preview host: ${previewHost}`);
-  console.log(`Tunnel mode: traffic via dev proxy (e.g. Cloudflare Tunnel)`);
+    console.log(`Tunnel mode: traffic via dev proxy (e.g. Cloudflare Tunnel)`);
   } else {
     console.log(`Preview host: ${previewHost}`);
     console.log(`Listening on ${SERVER_LISTEN_HOST}`);
   }
-  console.log(`Working directory: ${process.env.WORKSPACE_CWD || "(using default)"}`);
+  console.log(`Working directory: ${getWorkspaceCwd()}`);
 });

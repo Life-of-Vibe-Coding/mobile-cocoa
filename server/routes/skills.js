@@ -2,9 +2,9 @@
  * Skills discovery and management routes.
  */
 import path from "path";
-import { getWorkspaceCwd, projectRoot, loadSkillsConfig } from "../config/index.js";
+import { projectRoot, loadSkillsConfig } from "../config/index.js";
 import {
-  discoverSkills, getEnabledIds, getSkillChildren, getSkillContent, resolveAgentDir, setEnabledIds
+  discoverSkills, getEnabledIds, getSkillChildren, getSkillContent, setEnabledIds
 } from "../skills/index.js";
 
 /** Resolve skills directory from config/skills.json. */
@@ -58,9 +58,7 @@ export function registerSkillsRoutes(app) {
 
   app.get("/api/skills-enabled", (_, res) => {
     try {
-      const cwd = getWorkspaceCwd();
-      const agentDir = resolveAgentDir(cwd, projectRoot);
-      const enabledIds = getEnabledIds(agentDir);
+      const enabledIds = getEnabledIds();
       res.json({ enabledIds });
     } catch (err) {
       res.status(500).json({ error: err.message || "Failed to get enabled skills" });
@@ -69,12 +67,10 @@ export function registerSkillsRoutes(app) {
 
   app.post("/api/skills-enabled", (req, res) => {
     try {
-      const cwd = getWorkspaceCwd();
-      const agentDir = resolveAgentDir(cwd, projectRoot);
       const enabledIds = Array.isArray(req.body?.enabledIds) ? req.body.enabledIds : [];
-      const result = setEnabledIds(agentDir, enabledIds);
+      const result = setEnabledIds(enabledIds);
       if (result.ok) {
-        res.json({ enabledIds: getEnabledIds(agentDir) });
+        res.json({ enabledIds: getEnabledIds() });
       } else {
         res.status(400).json({ error: result.error });
       }

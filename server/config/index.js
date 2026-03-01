@@ -18,7 +18,9 @@ const projectRoot = path.resolve(__dirname, "../..");
 const MODELS_CONFIG_PATH = path.join(projectRoot, "config", "models.json");
 const PI_CONFIG_PATH = path.join(projectRoot, "config", "pi.json");
 const SKILLS_CONFIG_PATH = path.join(projectRoot, "config", "skills.json");
+export { MODELS_CONFIG_PATH, PI_CONFIG_PATH, SKILLS_CONFIG_PATH };
 const DEFAULTS_CONFIG_PATH = path.join(projectRoot, "config", "defaults.json");
+const SERVER_CONFIG_PATH = path.join(projectRoot, "config", "server.json");
 
 function loadConfigFile(filePath, { label, optional = false } = {}) {
   try {
@@ -79,24 +81,33 @@ const MODELS_DEFAULTS = asObject(FALLBACKS.models);
 const PI_DEFAULTS = asObject(FALLBACKS.pi);
 const SKILLS_DEFAULTS = asObject(FALLBACKS.skills);
 
+// User-specific server overrides — config/server.json (higher priority than defaults.json, no .env needed)
+const SERVER_OVERRIDES = asObject(loadConfigFile(SERVER_CONFIG_PATH, { label: "config/server.json", optional: true }));
+
 // Optional local aliases/path values from defaults config
 const DEFAULT_PROXY_CONFIG = asObject(SERVER_DEFAULTS.proxy);
 const DEFAULT_MOBILE_CONFIG = asObject(SERVER_DEFAULTS.mobile);
 const DEFAULT_SESSION_CONFIG = asObject(SERVER_DEFAULTS.sessions);
-const DEFAULT_SCRIPTS = asObject(SERVER_DEFAULTS.scripts);
 
 export const LOOPBACK_HOSTS = asRequiredStringList(SERVER_DEFAULTS.loopbackHosts, "server.loopbackHosts");
 
-export const DEFAULT_PERMISSION_MODE_FROM_CONFIG = asRequiredString(SERVER_DEFAULTS.defaultPermissionMode, "server.defaultPermissionMode");
-export const DEFAULT_PROVIDER_FROM_CONFIG = asRequiredString(SERVER_DEFAULTS.defaultProvider, "server.defaultProvider");
+export const DEFAULT_PERMISSION_MODE_FROM_CONFIG = asRequiredString(
+  SERVER_OVERRIDES.defaultPermissionMode ?? SERVER_DEFAULTS.defaultPermissionMode,
+  "server.defaultPermissionMode",
+);
+export const DEFAULT_PROVIDER_FROM_CONFIG = asRequiredString(
+  SERVER_OVERRIDES.defaultProvider ?? SERVER_DEFAULTS.defaultProvider,
+  "server.defaultProvider",
+);
 
-const DEFAULT_PORT_FROM_CONFIG = asRequiredNumber(SERVER_DEFAULTS.port, "server.port");
+const DEFAULT_PORT_FROM_CONFIG = asRequiredNumber(
+  SERVER_OVERRIDES.port ?? SERVER_DEFAULTS.port,
+  "server.port",
+);
 const DEFAULT_SIDEBAR_REFRESH_INTERVAL_MS = asRequiredNumber(
   SERVER_DEFAULTS.sidebarRefreshIntervalMs,
   "server.sidebarRefreshIntervalMs",
 );
-const DEFAULT_LOGS_DIR_NAME = asRequiredString(SERVER_DEFAULTS.logsDirName, "server.logsDirName");
-const DEFAULT_LLM_CLI_IO_SUBDIR = asRequiredString(SERVER_DEFAULTS.llmCliIoSubdir, "server.llmCliIoSubdir");
 const DEFAULT_PI_CLI_PATH = PI_DEFAULTS?.cliPath
   ? asRequiredString(PI_DEFAULTS.cliPath, "pi.cliPath")
   : asRequiredString(SERVER_DEFAULTS.pi?.cliPath, "server.pi.cliPath");
@@ -127,8 +138,6 @@ const DEFAULT_LOCALHOST_ALIASES = asRequiredStringList(
 );
 
 // ── External models config ──────────────────────────────────────────────────
-/** Absolute path to the models config JSON (config/models.json). */
-export const MODELS_CONFIG_PATH = MODELS_CONFIG_PATH;
 /** Load and parse models config from disk. Falls back to defaults config. */
 export function loadModelsConfig() {
   try {
@@ -157,8 +166,6 @@ export const DEFAULT_PROVIDER_MODEL_ALIASES =
     : {});
 
 // ── External Pi config ──────────────────────────────────────────────────────
-/** Absolute path to the Pi config JSON (config/pi.json). */
-export const PI_CONFIG_PATH = PI_CONFIG_PATH;
 /** Load and parse Pi config from disk. Falls back to defaults config. */
 export function loadPiConfig() {
   try {
@@ -170,18 +177,18 @@ export function loadPiConfig() {
   }
 }
 
-export const PI_FALLBACK_MODEL = asRequiredString(PI_DEFAULTS.fallbackModel, "pi.fallbackModel");
-export const PI_PROVIDER_FALLBACK = asRequiredString(PI_DEFAULTS.providerFallback, "pi.providerFallback");
+export const PI_FALLBACK_MODEL = asStringSafe(PI_DEFAULTS.fallbackModel,
+  asStringSafe(SERVER_DEFAULTS.pi?.fallbackModel, ""));
+export const PI_PROVIDER_FALLBACK = asStringSafe(PI_DEFAULTS.providerFallback,
+  asStringSafe(SERVER_DEFAULTS.pi?.providerFallback, "openai"));
 
 export const PI_SYSTEM_PROMPTS = asObject(PI_DEFAULTS.systemPrompts);
-export const PI_SYSTEM_PROMPT_TERMINAL_RULES = asRequiredString(
+export const PI_SYSTEM_PROMPT_TERMINAL_RULES = asStringSafe(
   PI_SYSTEM_PROMPTS.terminalRules,
-  "pi.systemPrompts.terminalRules",
+  "",
 );
 
 // ── External Skills config ──────────────────────────────────────────────────
-/** Absolute path to the skills config JSON (config/skills.json). */
-export const SKILLS_CONFIG_PATH = SKILLS_CONFIG_PATH;
 /** Load and parse the skills config from disk. Falls back to defaults config. */
 export function loadSkillsConfig() {
   try {
@@ -229,7 +236,7 @@ function resolveWorkspaceCwd() {
 }
 
 // Server port/listener + behavior defaults
-export const PORT = parseIntOrDefault(process.env.PORT, DEFAULT_PORT_FROM_CONFIG);
+export const PORT = DEFAULT_PORT_FROM_CONFIG;
 export const WORKSPACE_ALLOWED_ROOT = path.resolve(os.homedir());
 
 let currentWorkspaceCwd = resolveWorkspaceCwd();
@@ -239,77 +246,25 @@ export const SIDEBAR_REFRESH_INTERVAL_MS =
   parseIntOrDefault(process.env.SIDEBAR_REFRESH_INTERVAL_MS, DEFAULT_SIDEBAR_REFRESH_INTERVAL_MS);
 
 /** Config key for default permission mode. */
-export const DEFAULT_PERMISSION_MODE = process.env.DEFAULT_PERMISSION_MODE || DEFAULT_PERMISSION_MODE_FROM_CONFIG;
+export const DEFAULT_PERMISSION_MODE = DEFAULT_PERMISSION_MODE_FROM_CONFIG;
 
 /** Canonical provider names recognized throughout the app. */
 export const VALID_PROVIDERS = Object.freeze(["claude", "gemini", "codex"]);
 
 /** Validate default provider. */
-const rawDefaultProvider = typeof process.env.DEFAULT_PROVIDER === "string" ? process.env.DEFAULT_PROVIDER.toLowerCase() : "";
 export const DEFAULT_PROVIDER =
-  VALID_PROVIDERS.includes(rawDefaultProvider)
-    ? rawDefaultProvider
-    : DEFAULT_PROVIDER_FROM_CONFIG;
-
-/** Log directory for AI provider output. */
-const AI_LOG_ROOT = DEFAULT_LOGS_DIR_NAME;
-const AI_LOG_DIR = process.env.CLAUDE_OUTPUT_LOG
-  ? path.resolve(process.env.CLAUDE_OUTPUT_LOG)
-  : path.join(projectRoot, AI_LOG_ROOT);
-
-// (asStringSafe is defined above, near the top of the module)
-
-function resolveLogDir() {
-  try {
-    const stat = fs.statSync(AI_LOG_DIR);
-    return stat.isDirectory() ? AI_LOG_DIR : path.dirname(AI_LOG_DIR);
-  } catch {
-    return path.join(projectRoot, DEFAULT_LOGS_DIR_NAME);
-  }
-}
-
-/** Run-specific directory used for LLM input/output logs. */
-const LOG_DIR = resolveLogDir();
-
-// Run timestamp for logs
-const LOG_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-
-/** Base directory for LLM CLI input/output debug logs. */
-export const LLM_CLI_IO_LOG_DIR = path.join(LOG_DIR, DEFAULT_LLM_CLI_IO_SUBDIR);
-/** Run-specific directory: llm-cli-input-output/{timestamp}. */
-export const LLM_CLI_IO_RUN_DIR = path.join(LLM_CLI_IO_LOG_DIR, LOG_TIMESTAMP);
-
-export function ensureLlmCliIoRunDir() {
-  try {
-    if (!fs.existsSync(LLM_CLI_IO_RUN_DIR)) {
-      fs.mkdirSync(LLM_CLI_IO_RUN_DIR, { recursive: true });
-    }
-  } catch (err) {
-    console.warn("[llm-cli-io] Failed to create run dir:", err?.message);
-  }
-}
-
-export function getLlmCliIoTurnPaths(provider, sessionId, turnId) {
-  const sessionDir = path.join(LLM_CLI_IO_RUN_DIR, `${provider}-${sessionId}`);
-  const turnDir = path.join(sessionDir, String(turnId));
-  try {
-    fs.mkdirSync(turnDir, { recursive: true });
-  } catch (err) {
-    console.warn("[llm-cli-io] Failed to create turn dir:", err?.message);
-  }
-  return {
-    inputPath: path.join(turnDir, "input.log"),
-    outputPath: path.join(turnDir, "output.log"),
-    turnDir,
-  };
-}
+  VALID_PROVIDERS.includes(DEFAULT_PROVIDER_FROM_CONFIG)
+    ? DEFAULT_PROVIDER_FROM_CONFIG
+    : "codex";
 
 // PI + session/runtime settings
 export const PI_CLI_PATH = process.env.PI_CLI_PATH || DEFAULT_PI_CLI_PATH;
 export const SESSIONS_ROOT = path.join(projectRoot, DEFAULT_SESSIONS_DIR);
 
-// Docker flag
-export const ENABLE_DOCKER_MANAGER = process.env.ENABLE_DOCKER_MANAGER === "1" || process.env.ENABLE_DOCKER_MANAGER === "true";
+// Docker flag — read from config/server.json (enableDockerManager) or config/defaults.json
+export const ENABLE_DOCKER_MANAGER = SERVER_OVERRIDES.enableDockerManager === true
+  || SERVER_OVERRIDES.enableDockerManager === 1
+  || SERVER_DEFAULTS.enableDockerManager === true;
 
 /**
  * Returns the active overlay network type.
@@ -336,9 +291,6 @@ export const DEFAULT_SERVER_URL = DEFAULT_SERVER_URL_VALUE;
 export const DEFAULT_TUNNEL_PROXY_PORT = DEFAULT_TUNNEL_PROXY_PORT_FROM_CONFIG;
 export const ANDROID_EMULATOR_HOST = DEFAULT_ANDROID_EMULATOR_HOST;
 export const MOBILE_LOCALHOST_ALIASES = DEFAULT_LOCALHOST_ALIASES;
-export const CLOUDFLARE_TUNNEL_TARGET_TEMPLATE = `http://${PROXY_LOOPBACK_HOST}:${TUNNEL_PROXY_PORT}`;
-export const SMOKE_SCRIPT_DEFAULTS = asObject(DEFAULT_SCRIPTS.smokeSessionSwitch);
-export const LOAD_TEST_SCRIPT_DEFAULTS = asObject(DEFAULT_SCRIPTS.loadTestCodex);
 
 // Workspace mutable reference
 export function getWorkspaceCwd() {

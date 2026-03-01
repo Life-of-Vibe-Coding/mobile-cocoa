@@ -13,6 +13,9 @@ out/
 .env.*.local
 *.pem
 
+# Local config overrides (personal/machine-specific settings)
+config/server.json
+
 # Logs and debug
 logs/
 *.log

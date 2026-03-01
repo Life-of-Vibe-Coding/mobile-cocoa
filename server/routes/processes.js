@@ -8,6 +8,7 @@ import { getLogTail, getLogTailByName, isProtectedPid, killProcess, listProcesse
 
 const LOG_LINES_MIN = 10;
 const LOG_LINES_MAX = 500;
+const LOG_LINES_DEFAULT = 200;
 
 export function registerProcessesRoutes(app) {
   app.get("/api/processes", handleListProcesses);
@@ -31,7 +32,7 @@ function handleLogTail(req, res) {
   const name = typeof req.query.name === "string" ? req.query.name.trim() : "";
   const relPath = typeof req.query.path === "string" ? req.query.path.trim() : "";
   const lines = Math.min(
-    Math.max(parseInt(req.query.lines, 10) || 200, LOG_LINES_MIN),
+    Math.max(parseInt(req.query.lines, 10) || LOG_LINES_DEFAULT, LOG_LINES_MIN),
     LOG_LINES_MAX
   );
 

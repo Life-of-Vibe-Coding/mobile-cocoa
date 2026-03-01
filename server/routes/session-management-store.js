@@ -1,20 +1,28 @@
-let latestSessionManagementSnapshot = null;
-let latestSessionManagementSnapshotReceivedAt = null;
+/**
+ * In-memory store for the latest session management snapshot.
+ * The mobile client periodically POSTs its full session management state
+ * so it can be retrieved by other clients (e.g. a web UI) via GET.
+ */
+
+const store = {
+  snapshot: null,
+  receivedAt: null,
+};
 
 export function registerSessionManagementStoreRoutes(app) {
   app.get("/api/session-management-store", (_, res) => {
-    if (!latestSessionManagementSnapshot) {
+    if (!store.snapshot) {
       return res.json({
         ok: false,
         reason: "no_snapshot",
-        lastReceivedAt: latestSessionManagementSnapshotReceivedAt,
+        lastReceivedAt: store.receivedAt,
         snapshot: null,
       });
     }
     res.json({
       ok: true,
-      lastReceivedAt: latestSessionManagementSnapshotReceivedAt,
-      snapshot: latestSessionManagementSnapshot,
+      lastReceivedAt: store.receivedAt,
+      snapshot: store.snapshot,
     });
   });
 
@@ -23,11 +31,8 @@ export function registerSessionManagementStoreRoutes(app) {
     if (!snapshot || typeof snapshot !== "object") {
       return res.status(400).json({ ok: false, error: "Invalid payload" });
     }
-    latestSessionManagementSnapshotReceivedAt = new Date().toISOString();
-    latestSessionManagementSnapshot = {
-      ...snapshot,
-      receivedAt: latestSessionManagementSnapshotReceivedAt,
-    };
+    store.receivedAt = new Date().toISOString();
+    store.snapshot = { ...snapshot, receivedAt: store.receivedAt };
     res.json({ ok: true });
   });
 }

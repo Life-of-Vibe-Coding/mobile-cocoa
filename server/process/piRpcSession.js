@@ -25,6 +25,9 @@ import {
 import { resolveAgentDir, syncEnabledSkillsFolder } from "../skills/index.js";
 import { getActiveOverlay, getPreviewHost } from "../utils/index.js";
 
+/** Byte threshold above which assistant message SSE events are stripped to prevent unbounded responseText growth. */
+const SLIM_SSE_THRESHOLD_BYTES = 2048;
+
 /** Provider mapping: loaded from config/pi.json. */
 function getClientProviderToPi() {
   const cfg = loadPiConfig();
@@ -302,7 +305,7 @@ export function createPiRpcSession({
     // message events with role: assistant may contain full content — strip if > 2KB
     if (type === "message" && parsed.message?.role === "assistant") {
       const serialized = JSON.stringify(parsed);
-      if (serialized.length > 2048) {
+      if (serialized.length > SLIM_SSE_THRESHOLD_BYTES) {
         return { type: "message", id: parsed.id, parentId: parsed.parentId, timestamp: parsed.timestamp, message: { role: "assistant", content: "[content stripped for SSE]" } };
       }
     }
@@ -334,7 +337,8 @@ export function createPiRpcSession({
       if (["select", "confirm"].includes(method)) {
         // Auto-approve tool execution confirmations to prevent blocking when modal
         // is not shown or user cannot respond (e.g. terminal-runner bash approval).
-        const autoApprove = process.env.PI_AUTO_APPROVE_TOOL_CONFIRM === "true" || process.env.PI_AUTO_APPROVE_TOOL_CONFIRM === "1";
+        const piCfgForApprove = loadPiConfig();
+        const autoApprove = piCfgForApprove.autoApproveToolConfirm === true || piCfgForApprove.autoApproveToolConfirm === 1;
         if (autoApprove && method === "confirm") {
           sendCommand({ type: "extension_ui_response", id: parsed.id, confirmed: true });
           return;

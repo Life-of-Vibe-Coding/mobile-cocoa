@@ -23,9 +23,6 @@ Centralizes all server configuration: environment variables, workspace resolutio
 | `resolveWorkspaceCwd()` | Resolves workspace from `--workspace` flag → positional arg → `WORKSPACE` env → `WORKSPACE_CWD` env → default |
 | `getWorkspaceCwd()` | Returns current workspace directory (mutable at runtime) |
 | `setWorkspaceCwd(path)` | Changes workspace at runtime. Must be under `WORKSPACE_ALLOWED_ROOT` |
-| `resolveLogDir()` | Creates and returns log directory path |
-| `ensureLlmCliIoRunDir()` | Creates timestamped run directory for LLM I/O logs |
-| `getLlmCliIoTurnPaths(provider, sessionId, turnId)` | Returns `{ inputPath, outputPath, turnDir }` for a conversation turn |
 | `getOverlayNetwork()` | Returns `"tunnel"` or `"none"` based on `OVERLAY_NETWORK` env |
 
 ## How to Use
@@ -34,7 +31,6 @@ Centralizes all server configuration: environment variables, workspace resolutio
 import {
   PORT, getWorkspaceCwd, setWorkspaceCwd,
   loadModelsConfig, loadPiConfig, loadSkillsConfig,
-  getLlmCliIoTurnPaths, ensureLlmCliIoRunDir,
 } from "./server/config/index.js";
 
 // Get current workspace
@@ -77,7 +73,5 @@ curl http://localhost:3456/api/workspace-path
 | `MODELS_CONFIG_PATH` | `string` | Path to `config/models.json` |
 | `PI_CONFIG_PATH` | `string` | Path to `config/pi.json` |
 | `SKILLS_CONFIG_PATH` | `string` | Path to `config/skills.json` |
-| `LLM_CLI_IO_LOG_DIR` | `string` | Base dir for LLM CLI I/O logs |
-| `LLM_CLI_IO_RUN_DIR` | `string` | Timestamped run dir for current server session |
 | `TUNNEL_PROXY_PORT` | `number` | Dev proxy port (default `9443`) |
 | `projectRoot` | `string` | Absolute path to project root |

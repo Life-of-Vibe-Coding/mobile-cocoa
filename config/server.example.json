@@ -1,0 +1,8 @@
+{
+    "_comment": "Copy to config/server.json and edit for your local setup. Values here override config/defaults.json.",
+    "port": 3456,
+    "defaultProvider": "gemini",
+    "defaultPermissionMode": "bypassPermissions",
+    "enableDockerManager": false,
+    "funnelServerUrl": "http://YOUR_HOST:3456"
+}

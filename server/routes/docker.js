@@ -31,184 +31,94 @@ export async function registerDockerRoutes(app) {
     listVolumes,
     removeVolume,
     pruneVolumes,
+    buildDiagnostic,
   } = dockerMod;
   const publicDir = path.join(projectRoot, "public");
 
+  const handleAction = (actionFn, defaultError) => async (req, res) => {
+    try {
+      const result = await actionFn(req, res);
+      res.json(result ?? { ok: true });
+    } catch (err) {
+      res.status(dockerUnavailableStatus(err)).json({ error: err?.message || defaultError });
+    }
+  };
+
   app.get("/api/docker/diagnostic", async (_, res) => {
-    const diag = await buildDiagnostic();
+    const diag = await buildDiagnostic(ENABLE_DOCKER_MANAGER);
     res.json(diag);
   });
 
   app.get("/docker", (_, res) => {
     res.sendFile(path.join(publicDir, "docker.html"));
   });
+
   app.get("/docker.js", (_, res) => {
     res.setHeader("Content-Type", "application/javascript");
     res.sendFile(path.join(publicDir, "docker.js"));
   });
 
-  app.get("/api/docker/containers", async (req, res) => {
-    try {
-      const all = req.query.all === "true";
-      const containers = await listContainers({ all });
-      res.json({ containers });
-    } catch (err) {
-      res.status(dockerUnavailableStatus(err)).json({ error: err?.message || "Failed to list containers" });
-    }
-  });
+  app.get("/api/docker/containers", handleAction(
+    async (req) => ({ containers: await listContainers({ all: req.query.all === "true" }) }),
+    "Failed to list containers"
+  ));
 
-  app.post("/api/docker/containers/:id/start", async (req, res) => {
-    try {
-      await startContainer(req.params.id);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ error: err?.message || "Failed to start container" });
-    }
-  });
+  app.post("/api/docker/containers/:id/start", handleAction(
+    async (req) => { await startContainer(req.params.id); },
+    "Failed to start container"
+  ));
 
-  app.post("/api/docker/containers/:id/stop", async (req, res) => {
-    try {
-      await stopContainer(req.params.id);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ error: err?.message || "Failed to stop container" });
-    }
-  });
+  app.post("/api/docker/containers/:id/stop", handleAction(
+    async (req) => { await stopContainer(req.params.id); },
+    "Failed to stop container"
+  ));
 
-  app.post("/api/docker/containers/:id/restart", async (req, res) => {
-    try {
-      await restartContainer(req.params.id);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ error: err?.message || "Failed to restart container" });
-    }
-  });
+  app.post("/api/docker/containers/:id/restart", handleAction(
+    async (req) => { await restartContainer(req.params.id); },
+    "Failed to restart container"
+  ));
 
-  app.delete("/api/docker/containers/:id", async (req, res) => {
-    try {
-      const force = req.query.force === "true";
-      await removeContainer(req.params.id, { force });
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ error: err?.message || "Failed to remove container" });
-    }
-  });
+  app.delete("/api/docker/containers/:id", handleAction(
+    async (req) => { await removeContainer(req.params.id, { force: req.query.force === "true" }); },
+    "Failed to remove container"
+  ));
 
-  app.get("/api/docker/containers/:id/logs", async (req, res) => {
-    try {
+  app.get("/api/docker/containers/:id/logs", handleAction(
+    async (req) => {
       const tail = req.query.tail ? parseInt(req.query.tail, 10) : 500;
       const opts = Number.isFinite(tail) && tail > 0 ? { tail } : {};
-      const { logs } = await getContainerLogs(req.params.id, opts);
-      res.json({ logs });
-    } catch (err) {
-      res.status(dockerUnavailableStatus(err)).json({ error: err?.message || "Failed to get logs" });
-    }
-  });
+      return await getContainerLogs(req.params.id, opts);
+    },
+    "Failed to get logs"
+  ));
 
-  app.get("/api/docker/images", async (_, res) => {
-    try {
-      const images = await listImages();
-      res.json({ images });
-    } catch (err) {
-      res.status(dockerUnavailableStatus(err)).json({ error: err?.message || "Failed to list images" });
-    }
-  });
+  app.get("/api/docker/images", handleAction(
+    async () => ({ images: await listImages() }),
+    "Failed to list images"
+  ));
 
-  app.post("/api/docker/images/prune", async (req, res) => {
-    try {
-      const filters = req.body?.filters || {};
-      const result = await pruneImages({ filters });
-      res.json(result);
-    } catch (err) {
-      res.status(dockerUnavailableStatus(err)).json({ error: err?.message || "Failed to prune images" });
-    }
-  });
+  app.post("/api/docker/images/prune", handleAction(
+    async (req) => await pruneImages({ filters: req.body?.filters || {} }),
+    "Failed to prune images"
+  ));
 
-  app.delete("/api/docker/images/:id", async (req, res) => {
-    try {
-      const force = req.query.force === "true";
-      await removeImage(req.params.id, { force });
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ error: err?.message || "Failed to remove image" });
-    }
-  });
+  app.delete("/api/docker/images/:id", handleAction(
+    async (req) => { await removeImage(req.params.id, { force: req.query.force === "true" }); },
+    "Failed to remove image"
+  ));
 
-  app.get("/api/docker/volumes", async (_, res) => {
-    try {
-      const volumes = await listVolumes();
-      res.json({ volumes });
-    } catch (err) {
-      res.status(dockerUnavailableStatus(err)).json({ error: err?.message || "Failed to list volumes" });
-    }
-  });
+  app.get("/api/docker/volumes", handleAction(
+    async () => ({ volumes: await listVolumes() }),
+    "Failed to list volumes"
+  ));
 
-  app.post("/api/docker/volumes/prune", async (_, res) => {
-    try {
-      const result = await pruneVolumes();
-      res.json(result);
-    } catch (err) {
-      res.status(dockerUnavailableStatus(err)).json({ error: err?.message || "Failed to prune volumes" });
-    }
-  });
+  app.post("/api/docker/volumes/prune", handleAction(
+    async () => await pruneVolumes(),
+    "Failed to prune volumes"
+  ));
 
-  app.delete("/api/docker/volumes/:name", async (req, res) => {
-    try {
-      await removeVolume(req.params.name);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ error: err?.message || "Failed to remove volume" });
-    }
-  });
-}
-
-async function buildDiagnostic() {
-  const candidates = process.env.DOCKER_SOCKET
-    ? [path.resolve(process.env.DOCKER_SOCKET)]
-    : ["/var/run/docker.sock", ...(process.platform === "darwin" ? [path.join(os.homedir(), ".docker", "run", "docker.sock")] : [])];
-
-  const diag = {
-    ENABLE_DOCKER_MANAGER: !!ENABLE_DOCKER_MANAGER,
-    DOCKER_SOCKET: process.env.DOCKER_SOCKET ?? null,
-    platform: process.platform,
-    home: os.homedir(),
-    sockets: [],
-    dockerClient: null,
-    listContainers: null,
-  };
-
-  for (const p of candidates) {
-    let exists = false, isSocket = false, err = null;
-    try {
-      exists = fs.existsSync(p);
-      if (exists) isSocket = fs.statSync(p).isSocket();
-    } catch (e) {
-      err = e?.message;
-    }
-    diag.sockets.push({ path: p, exists, isSocket, error: err });
-  }
-
-  try {
-    const Docker = (await import("dockerode")).default;
-    const socketPath = candidates.find((p) => {
-      try {
-        return fs.existsSync(p) && fs.statSync(p).isSocket();
-      } catch {
-        return false;
-      }
-    });
-    if (socketPath) {
-      const client = new Docker({ socketPath });
-      diag.dockerClient = "created";
-      const raw = await client.listContainers({ all: true });
-      diag.listContainers = { ok: true, count: raw.length };
-    } else {
-      diag.dockerClient = "no_valid_socket";
-    }
-  } catch (e) {
-    diag.dockerClient = diag.dockerClient ?? "error";
-    diag.listContainersError = e?.message ?? String(e);
-  }
-
-  return diag;
+  app.delete("/api/docker/volumes/:name", handleAction(
+    async (req) => { await removeVolume(req.params.name); },
+    "Failed to remove volume"
+  ));
 }
