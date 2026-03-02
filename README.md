@@ -57,7 +57,6 @@ Mobile Cocoa uses **JSON config files** instead of `.env` files. All configurati
    {
      "port": 3456,
      "defaultProvider": "gemini",
-     "defaultPermissionMode": "bypassPermissions",
      "enableDockerManager": false,
      "funnelServerUrl": "http://YOUR_HOST:3456"
    }

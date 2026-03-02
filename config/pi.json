@@ -2,7 +2,6 @@
   "_comment": "Pi CLI configuration — edit this file to change Pi agent behavior. No code changes required.",
   "cliPath": "pi",
   "autoApproveToolConfirm": false,
-  "defaultPermissionMode": "bypassPermissions",
   "providerMapping": {
     "claude": "anthropic",
     "codex": "openai-codex"

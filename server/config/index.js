@@ -89,10 +89,6 @@ const DEFAULT_SESSION_CONFIG = asObject(SERVER_DEFAULTS.sessions);
 
 export const LOOPBACK_HOSTS = asRequiredStringList(SERVER_DEFAULTS.loopbackHosts, "server.loopbackHosts");
 
-const DEFAULT_PERMISSION_MODE_FROM_CONFIG = asRequiredString(
-  SERVER_OVERRIDES.defaultPermissionMode ?? SERVER_DEFAULTS.defaultPermissionMode,
-  "server.defaultPermissionMode",
-);
 const DEFAULT_PROVIDER_FROM_CONFIG = asRequiredString(
   SERVER_OVERRIDES.defaultProvider ?? SERVER_DEFAULTS.defaultProvider,
   "server.defaultProvider",
@@ -243,9 +239,6 @@ let currentWorkspaceCwd = resolveWorkspaceCwd();
 export const SIDEBAR_REFRESH_INTERVAL_MS =
   parseIntOrDefault(process.env.SIDEBAR_REFRESH_INTERVAL_MS, DEFAULT_SIDEBAR_REFRESH_INTERVAL_MS);
 
-/** Config key for default permission mode. */
-export const DEFAULT_PERMISSION_MODE = DEFAULT_PERMISSION_MODE_FROM_CONFIG;
-
 /** Canonical provider names recognized throughout the app. */
 export const VALID_PROVIDERS = Object.freeze(["claude", "gemini", "codex"]);
 
@@ -323,7 +316,7 @@ export function setWorkspaceCwd(newPath) {
   }
 }
 
-export { MODELS_CONFIG_PATH, PI_CONFIG_PATH, SKILLS_CONFIG_PATH, DEFAULT_PERMISSION_MODE_FROM_CONFIG, DEFAULT_PROVIDER_FROM_CONFIG };
+export { MODELS_CONFIG_PATH, PI_CONFIG_PATH, SKILLS_CONFIG_PATH, DEFAULT_PROVIDER_FROM_CONFIG };
 
 // Export project paths
 export { projectRoot, __dirname };

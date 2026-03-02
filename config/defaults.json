@@ -5,8 +5,7 @@
     "listenHost": "0.0.0.0",
     "logHost": "localhost",
     "sidebarRefreshIntervalMs": 3000,
-    "defaultPermissionMode": "bypassPermissions",
-    "defaultProvider": "codex",
+    "defaultProvider": "gemini",
     "loopbackHosts": ["localhost", "127.0.0.1", "::1"],
     "sseHost": "localhost:3456",
     "logsDirName": "logs",
@@ -133,7 +132,6 @@
     "_comment": "Pi CLI fallback/default configuration.",
     "cliPath": "pi",
     "autoApproveToolConfirm": false,
-    "defaultPermissionMode": "bypassPermissions",
     "providerMapping": {
       "claude": "anthropic",
       "codex": "openai-codex"

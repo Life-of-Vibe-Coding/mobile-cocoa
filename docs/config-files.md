@@ -63,8 +63,7 @@ Configures Pi CLI behavior: path, permissions, provider mapping, routing rules, 
 | Field | Description |
 |-------|-------------|
 | `cliPath` | Path to Pi binary (default: `"pi"` on PATH) |
-| `autoApproveToolConfirm` | Auto-approve tool execution confirms |
-| `defaultPermissionMode` | Default: `"bypassPermissions"` |
+| `autoApproveToolConfirm` | Auto-approve tool execution confirms (yolo mode when `true`) |
 | `providerMapping` | Direct provider → Pi provider mapping (`claude→anthropic`, `codex→openai-codex`) |
 | `providerRouting.rules` | Regex-based model → provider routing (evaluated in order, first match wins) |
 | `providerRouting.fallback` | Fallback provider per client provider |

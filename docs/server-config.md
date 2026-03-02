@@ -66,8 +66,7 @@ npm run smoke:server
 | `PORT` | `number` | Server port (default `3456`) |
 | `WORKSPACE_ALLOWED_ROOT` | `string` | Root path for allowed workspace switching |
 | `SIDEBAR_REFRESH_INTERVAL_MS` | `number` | File tree refresh interval (default `3000`) |
-| `DEFAULT_PROVIDER` | `string` | Default AI provider (from config, currently `codex`) |
-| `DEFAULT_PERMISSION_MODE` | `string` | Claude permission mode (`bypassPermissions`) |
+| `DEFAULT_PROVIDER` | `string` | Default AI provider (from config, currently `gemini`) |
 | `ENABLE_DOCKER_MANAGER` | `boolean` | Docker management flag |
 | `PI_CLI_PATH` | `string` | Path to Pi CLI binary |
 | `SESSIONS_ROOT` | `string` | Root directory for session files |
