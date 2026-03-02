@@ -36,14 +36,33 @@ Getting started with Mobile Cocoa is simple. The architecture is split between a
 - Expo Go app on your phone (or an iOS/Android simulator)
 
 ### Step 1 — Install [Pi](https://github.com/badlogic/pi-mono) (CLI Agent Backend)
-Mobile Cocoa uses **Pi** as the underlying CLI agent that connects to LLM providers. You must install Pi and register with at least one coding plan:
 
-1. **Install Pi CLI** — follow the official installation instructions for your platform.
-2. **Register with a provider** — run `pi` in your terminal and follow the prompts to authenticate with one (or more) of the supported providers:
-   - **Claude (Anthropic)** — requires an Anthropic API plan or Claude Max subscription.
-   - **Gemini (Google)** — requires a Google AI / Gemini API key or plan.
-   - **Codex (OpenAI)** — requires an OpenAI Codex plan.
-3. Once authenticated, Pi stores your credentials locally. Mobile Cocoa will automatically route requests to the correct provider based on the model you select in the app.
+Mobile Cocoa uses **Pi** (`@mariozechner/pi-coding-agent`) as the underlying CLI agent that connects to LLM providers. Pi is a minimal AI coding harness that equips LLMs with `read`, `write`, `edit`, and `bash` tools for terminal-based coding tasks. The server runs Pi in `--mode rpc` (headless JSON-RPC) to programmatically control it.
+
+**Install Pi globally:**
+```bash
+npm install -g @mariozechner/pi-coding-agent
+```
+
+This makes the `pi` command available system-wide.
+
+**Authenticate with one or more providers** — run `pi` and follow the interactive prompts:
+
+```bash
+pi
+```
+
+Pi stores credentials in `~/.pi/agent/auth.json` (or `<workspace>/.pi/agent/auth.json`).
+
+| Pi CLI Provider | What it covers |
+|---|---|
+| `anthropic` | Claude models (`claude-*`, `claude-sonnet`, `claude-opus`, etc.) |
+| `google-gemini-cli` | Gemini 2.x / 3.x preview models (`gemini-3.1-pro-preview`, etc.) |
+| `google-antigravity` | Gemini 3 Pro low/high/flash variants |
+| `openai-codex` | Codex models (`gpt-5.3-codex`, `gpt-5.1-codex-mini`, etc.) |
+| `openai` | Standard GPT models (`gpt-4o`, etc.) |
+
+Mobile Cocoa automatically routes each request to the correct Pi provider based on the model selected in the app — this routing is configured in `config/pi.json` and requires no code changes.
 
 ### Step 2 — Configure the Server
 Mobile Cocoa uses **JSON config files** instead of `.env` files. All configuration lives in the `config/` folder:
