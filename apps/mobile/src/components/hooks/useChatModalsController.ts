@@ -31,7 +31,7 @@ type ChatModalsControllerProps = {
 };
 
 type ChatModalsControllerState = {
-  openHandlers: ChatModalOpenHandlers;
+  openHandlers: Pick<ChatModalOpenHandlers, "onOpenSessionManagement" | "onOpenSkillsConfig" | "onOpenProcesses" | "onOpenDocker" | "onOpenPortForwarding" | "onOpenModelPicker" | "onOpenGeneralSettings" | "isSessionManagementOpen" | "isAnyModalOpen">;
   modalStates: {
     workspacePicker: ModalController;
     sessionManagement: ModalController;
@@ -40,6 +40,7 @@ type ChatModalsControllerState = {
     docker: ModalController;
     portForwarding: ModalController;
     modelPicker: ModalController;
+    generalSettings: ModalController;
   };
   selectedSkillId: string | null;
   handleSessionSelect: (session: SessionPickerItem | null) => void;
@@ -91,6 +92,7 @@ export function useChatModalsController({
   const docker = useModalController();
   const portForwarding = useModalController();
   const modelPicker = useModalController();
+  const generalSettings = useModalController();
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
 
   const openWorkspacePicker = useCallback(() => {
@@ -125,6 +127,10 @@ export function useChatModalsController({
   const openModelPicker = useCallback(() => {
     modelPicker.open();
   }, [modelPicker.open]);
+
+  const openGeneralSettings = useCallback(() => {
+    generalSettings.open();
+  }, [generalSettings.open]);
 
   const closeSkillsConfig = useCallback(() => {
     skillsConfig.close();
@@ -192,6 +198,7 @@ export function useChatModalsController({
       onOpenDocker: openDocker,
       onOpenPortForwarding: openPortForwarding,
       onOpenModelPicker: openModelPicker,
+      onOpenGeneralSettings: openGeneralSettings,
       isSessionManagementOpen: sessionManagement.isOpen,
       isAnyModalOpen:
         workspacePicker.isOpen ||
@@ -200,7 +207,8 @@ export function useChatModalsController({
         processes.isOpen ||
         docker.isOpen ||
         portForwarding.isOpen ||
-        modelPicker.isOpen,
+        modelPicker.isOpen ||
+        generalSettings.isOpen,
     }),
     [
       openSessionManagement,
@@ -209,6 +217,7 @@ export function useChatModalsController({
       openDocker,
       openPortForwarding,
       openModelPicker,
+      openGeneralSettings,
       workspacePicker.isOpen,
       sessionManagement.isOpen,
       skillsConfig.isOpen,
@@ -216,6 +225,7 @@ export function useChatModalsController({
       docker.isOpen,
       portForwarding.isOpen,
       modelPicker.isOpen,
+      generalSettings.isOpen,
     ]
   );
 
@@ -229,6 +239,7 @@ export function useChatModalsController({
       docker,
       portForwarding,
       modelPicker,
+      generalSettings,
     },
     selectedSkillId,
     handleSessionSelect,

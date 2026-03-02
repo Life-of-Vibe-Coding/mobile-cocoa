@@ -1,7 +1,9 @@
 import { ChatModalsSection } from "@/components/chat/ChatModalsSection";
 import type { CodeRefPayload } from "@/components/file/FileViewerModal";
+import { SwipeablePageNavigator } from "@/components/navigation/SwipeablePageNavigator";
 import { ChatPageShell } from "@/components/pages/ChatPageShell";
 import { FileViewerPage } from "@/components/pages/FileViewerPage";
+import { SessionManagementPage } from "@/components/pages/SessionManagementPage";
 import { WorkspaceSidebarPage } from "@/components/pages/WorkspaceSidebarPage";
 import type { createAppStyles } from "@/components/styles/appStyles";
 import { Box } from "@/components/ui/box";
@@ -167,6 +169,13 @@ export type ChatPageModals = {
   processes: ChatPageProcesses;
   sessionManagement: ChatPageSessionManagement;
   preview: ChatPagePreview;
+  generalSettings: {
+    isAutoApproveToolConfirm: boolean;
+    onAutoApproveToolConfirmChange: (next: boolean) => void;
+    connectionMode: string;
+    onConnectionModeChange: (mode: any) => void;
+    workspacePath: string | null;
+  };
 };
 
 export type ChatPageProps = {
@@ -199,8 +208,8 @@ export function ChatPage({
       onSelectActiveChat={modals.sessionManagement.onSelectActiveChat}
     >
       {(modalHandlers) => {
-        return (
-          <Box className="flex-1 bg-surface-base">
+        const mainContent = (
+          <Box className="flex-1" style={{ backgroundColor: 'transparent' }}>
             {isFileViewerOpen ? (
               <FileViewerPage
                 path={fileViewer.selectedFilePath!}
@@ -242,6 +251,33 @@ export function ChatPage({
               </>
             )}
           </Box>
+        );
+
+        const sessionPage = (
+          <SessionManagementPage
+            isOpen={modalHandlers.isSessionManagementOpen}
+            onClose={modalHandlers.onCloseSessionManagement}
+            currentSessionId={modals.sessionManagement.currentSessionId}
+            workspacePath={modals.sessionManagement.workspacePathForSessionManagement}
+            serverBaseUrl={modals.sessionManagement.serverBaseUrl}
+            onOpenWorkspacePicker={modalHandlers.onOpenWorkspacePickerFromSession}
+            onSelectSession={modalHandlers.onSessionSelect}
+            onNewSession={modalHandlers.onNewSession}
+            showActiveChat={modals.sessionManagement.showActiveChat}
+            sessionRunning={modals.sessionManagement.sessionRunning}
+            onSelectActiveChat={modalHandlers.onSelectActiveChat}
+          />
+        );
+
+        return (
+          <SwipeablePageNavigator
+            isOpen={modalHandlers.isSessionManagementOpen}
+            onOpen={modalHandlers.onOpenSessionManagement}
+            onClose={modalHandlers.onCloseSessionManagement}
+            mainPage={mainContent}
+            overlayPage={sessionPage}
+            swipeToOpenEnabled={!sidebar.visible && !isFileViewerOpen && !modalHandlers.isAnyNonSessionModalOpen}
+          />
         );
       }}
     </ChatModalsSection>

@@ -9,13 +9,15 @@ export function SessionManagementPage({
   isOpen,
   ...props
 }: SessionManagementPageProps) {
-  if (!isOpen) return null;
-
+  // Always render the full page since it's mounted inside the
+  // SwipeablePageNavigator and needs to be visible during swipe gestures.
+  // The SessionManagementModal handles isOpen internally for data fetching.
   return (
     <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom", "left", "right"]}>
       <Box className="flex-1 bg-surface-base">
-        <SessionManagementModal isOpen embedded {...props} />
+        <SessionManagementModal isOpen={isOpen} embedded {...props} />
       </Box>
     </SafeAreaView>
   );
 }
+

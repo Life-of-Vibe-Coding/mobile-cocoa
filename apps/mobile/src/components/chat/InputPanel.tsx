@@ -78,6 +78,7 @@ export interface InputPanelProps {
   onOpenPortForwarding?: () => void;
   isCloudflareMode?: boolean;
   serverBaseUrl?: string;
+  onOpenGeneralSettings?: () => void;
 }
 
 export function InputPanel({
@@ -102,6 +103,7 @@ export function InputPanel({
   onOpenPortForwarding,
   isCloudflareMode,
   serverBaseUrl,
+  onOpenGeneralSettings,
 }: InputPanelProps) {
   const theme = useTheme();
   const [prompt, setPrompt] = useState("");
@@ -357,21 +359,7 @@ export function InputPanel({
             )}
           />
         </HStack>
-        <HStack space="md" className="w-full flex-row items-center justify-between px-1 mb-2">
-          <Text size="sm" className={isDark ? "text-typography-400" : "text-typography-600"}>
-            YOLO confirm
-          </Text>
-          <Switch
-            value={isAutoApproveToolConfirm}
-            onValueChange={onAutoApproveToolConfirmChange}
-            accessibilityLabel="Toggle YOLO confirm mode"
-            trackColor={{
-              false: isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(15, 23, 42, 0.2)",
-              true: isDark ? theme.colors.info : `${theme.colors.info}80`,
-            }}
-            thumbColor={isAutoApproveToolConfirm ? (isDark ? theme.colors.textPrimary : "#FFFFFF") : (isDark ? "rgba(226, 238, 252, 0.9)" : "#FFFFFF")}
-          />
-        </HStack>
+
         <HStack className="w-full flex-row items-center justify-between mt-1">
           <HStack space="sm" className="flex-row items-center gap-2">
             <SkillHubPopover
@@ -433,6 +421,9 @@ export function InputPanel({
                 onOpenWebPreview={onOpenWebPreview}
                 isCloudflareMode={isCloudflareMode}
                 onOpenPortForwarding={onOpenPortForwarding}
+                isAutoApproveToolConfirm={isAutoApproveToolConfirm}
+                onAutoApproveToolConfirmChange={onAutoApproveToolConfirmChange}
+                onOpenGeneralSettings={onOpenGeneralSettings}
               />
             )}
             {onTerminateAgent && sessionRunning && (

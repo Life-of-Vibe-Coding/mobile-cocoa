@@ -22,8 +22,7 @@ export function GluestackUIProvider({
 
   return (
     <View
-      style={[{ flex: 1, height: '100%', width: '100%' }, props.style]}
-      className="bg-background-0"
+      style={[{ flex: 1, height: '100%', width: '100%', backgroundColor: 'transparent' }, props.style]}
     >
       <OverlayProvider>
         <ToastProvider>{props.children}</ToastProvider>

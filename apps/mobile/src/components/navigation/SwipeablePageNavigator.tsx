@@ -85,6 +85,8 @@ export function SwipeablePageNavigator({
         .failOffsetY([-10, 10])
         .onStart(() => {
             isGestureActive.value = true;
+            // Eagerly open so the overlay page content renders during the swipe
+            runOnJS(handleOpen)();
         })
         .onUpdate((event) => {
             // Negative translationX = swiping left = opening
@@ -98,9 +100,10 @@ export function SwipeablePageNavigator({
 
             if (distance > SWIPE_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
                 progress.value = withTiming(1, TIMING_CONFIG);
-                runOnJS(handleOpen)();
             } else {
+                // Swipe cancelled, close the overlay
                 progress.value = withTiming(0, TIMING_CONFIG);
+                runOnJS(handleClose)();
             }
         });
 

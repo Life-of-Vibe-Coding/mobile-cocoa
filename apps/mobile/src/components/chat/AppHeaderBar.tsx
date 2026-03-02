@@ -1,11 +1,10 @@
-import { SettingsGradientIcon } from "@/components/icons/HeaderIcons";
 import { layoutGlassHeaderStyleDark, SHELL_HORIZONTAL_PADDING } from "@/components/styles/appStyles";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import {
-    AnimatedPressableView,
-    EntranceAnimation,
-    triggerHaptic
+  AnimatedPressableView,
+  EntranceAnimation,
+  triggerHaptic
 } from "@/designSystem";
 import { useThemeAssets } from "@/hooks/useThemeAssets";
 import { useTheme } from "@/theme/index";
@@ -16,7 +15,6 @@ import { Image, StyleSheet } from "react-native";
 interface AppHeaderBarProps {
   visible: boolean;
   onOpenExplorer: () => void;
-  onOpenSessionManagement: () => void;
 }
 
 interface HeaderButtonProps {
@@ -74,7 +72,6 @@ function HeaderLogo() {
 export function AppHeaderBar({
   visible,
   onOpenExplorer,
-  onOpenSessionManagement,
 }: AppHeaderBarProps) {
   const theme = useTheme();
   const isDark = theme.mode === "dark";
@@ -104,17 +101,6 @@ export function AppHeaderBar({
           isDark={isDark}
         />
         <Box className="min-w-0 flex-1 shrink justify-center items-center px-2" />
-        <HeaderButton
-          icon={
-            <SettingsGradientIcon size={36} />
-          }
-          onPress={onOpenSessionManagement}
-          accessibilityLabel="Manage sessions"
-          delay={200}
-          size={56}
-          plain
-          isDark={isDark}
-        />
       </HStack>
     </Box>
   );

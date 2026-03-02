@@ -56,7 +56,6 @@ export function ChatPageShell({
                 {!isAnyOverlayOpen && (
                   <ChatHeaderSection
                     onOpenExplorer={header.onOpenExplorer}
-                    onOpenSessionManagement={modalHandlers.onOpenSessionManagement}
                     sidebarVisible={header.sidebarVisible || modalHandlers.isAnyModalOpen}
                   />
                 )}
@@ -74,6 +73,7 @@ export function ChatPageShell({
                 onOpenProcesses={modalHandlers.onOpenProcesses}
                 onOpenDocker={modalHandlers.onOpenDocker}
                 onOpenPortForwarding={modalHandlers.onOpenPortForwarding}
+                onOpenGeneralSettings={modalHandlers.onOpenGeneralSettings}
                 isCloudflareMode={portForwarding?.isCloudflareMode}
                 onOpenModelPicker={modalHandlers.onOpenModelPicker}
                 onInputDockLayout={handleInputDockLayout}

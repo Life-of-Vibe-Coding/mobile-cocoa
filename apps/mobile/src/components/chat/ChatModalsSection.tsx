@@ -5,7 +5,6 @@ import { ModelPickerSheet } from "@/components/chat/ModelPickerSheet";
 import { DockerManagerModal } from "@/components/docker/DockerManagerModal";
 import { useChatModalsController } from "@/components/hooks/useChatModalsController";
 import type { ChatPageContext, ChatPageModals } from "@/components/pages/ChatPage";
-import { SessionManagementPage } from "@/components/pages/SessionManagementPage";
 import { PortForwardingModal } from "@/components/ports/PortForwardingModal";
 import { PreviewWebViewModal } from "@/components/preview/PreviewWebViewModal";
 import { ProcessDashboardModal } from "@/components/processes/ProcessDashboardModal";
@@ -13,6 +12,7 @@ import { SkillConfigurationView } from "@/components/settings/SkillConfiguration
 import { WorkspacePickerModal } from "@/components/settings/WorkspacePickerModal";
 import type { ChatModalOpenHandlers } from "@/components/types/chatModalTypes";
 import { Box } from "@/components/ui/box";
+import { GeneralSettingsModal } from "@/components/settings/GeneralSettingsModal";
 
 type ChatModalsSectionProps = {
   context: ChatPageContext;
@@ -50,31 +50,39 @@ export function ChatModalsSection({
     onModelProviderChange: modals.modelPicker.onModelProviderChange,
     onModelChange: modals.modelPicker.onModelChange,
   });
+
   const isAnyModalOpen =
     openHandlers.isAnyModalOpen ||
     modals.askQuestion.pendingAskQuestion != null ||
     modals.preview.previewVisible;
+
   const isSkillsConfigOpen = modalStates.skillsConfig.isOpen;
 
-  const isSessionManagementOpen = modalStates.sessionManagement.isOpen;
+  // Non-session-management modals (used to disable swipe gesture when other modals are open)
+  const isAnyNonSessionModalOpen =
+    modalStates.workspacePicker.isOpen ||
+    modalStates.skillsConfig.isOpen ||
+    modalStates.docker.isOpen ||
+    modalStates.portForwarding.isOpen ||
+    modalStates.modelPicker.isOpen ||
+    modalStates.generalSettings.isOpen ||
+    modals.askQuestion.pendingAskQuestion != null ||
+    modals.preview.previewVisible;
+
+  const fullHandlers: ChatModalOpenHandlers = {
+    ...openHandlers,
+    isAnyModalOpen,
+    isAnyNonSessionModalOpen,
+    onCloseSessionManagement: modalStates.sessionManagement.close,
+    onOpenWorkspacePickerFromSession: handleWorkspacePickerFromSession,
+    onSessionSelect: handleSessionSelect,
+    onNewSession: handleNewSession,
+    onSelectActiveChat: handleSelectActiveChat,
+  };
 
   return (
     <>
-      {isSessionManagementOpen ? (
-        <SessionManagementPage
-          isOpen
-          onClose={modalStates.sessionManagement.close}
-          currentSessionId={modals.sessionManagement.currentSessionId}
-          workspacePath={modals.sessionManagement.workspacePathForSessionManagement}
-          serverBaseUrl={modals.sessionManagement.serverBaseUrl}
-          onOpenWorkspacePicker={handleWorkspacePickerFromSession}
-          onSelectSession={handleSessionSelect}
-          onNewSession={handleNewSession}
-          showActiveChat={modals.sessionManagement.showActiveChat}
-          sessionRunning={modals.sessionManagement.sessionRunning}
-          onSelectActiveChat={handleSelectActiveChat}
-        />
-      ) : isSkillsConfigOpen ? (
+      {isSkillsConfigOpen ? (
         <Box className="flex-1">
           <SkillConfigurationView
             isOpen
@@ -87,7 +95,7 @@ export function ChatModalsSection({
           />
         </Box>
       ) : (
-        children({ ...openHandlers, isAnyModalOpen })
+        children(fullHandlers)
       )}
       <WorkspacePickerModal
         isOpen={modalStates.workspacePicker.isOpen}
@@ -130,6 +138,16 @@ export function ChatModalsSection({
         onClose={modals.preview.onClosePreview}
         resolvePreviewUrl={modals.preview.resolvePreviewUrl}
       />
+      <GeneralSettingsModal
+        isOpen={modalStates.generalSettings.isOpen}
+        onClose={modalStates.generalSettings.close}
+        isAutoApproveToolConfirm={modals.generalSettings.isAutoApproveToolConfirm}
+        onAutoApproveToolConfirmChange={modals.generalSettings.onAutoApproveToolConfirmChange}
+        connectionMode={modals.generalSettings.connectionMode as any}
+        onConnectionModeChange={modals.generalSettings.onConnectionModeChange}
+        workspacePath={modals.generalSettings.workspacePath}
+      />
     </>
   );
 }
+

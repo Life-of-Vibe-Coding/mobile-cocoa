@@ -11,13 +11,22 @@ import {
  * Connection mode for the mobile app.
  *   - "direct"     : Direct URL connection (localhost, LAN, etc.)
  *   - "cloudflare" : Cloudflare Tunnel — base URL is tunnel URL; proxy uses X-Target-Port / _targetPort
+ *   - "tailscale"  : Tailscale connection - usually direct but on a Tailscale network.
  */
-export type ConnectionMode = "direct" | "cloudflare";
+export type ConnectionMode = "direct" | "cloudflare" | "tailscale";
+
+let runtimeConnectionModeOverride: ConnectionMode | null = null;
+
+export function setRuntimeConnectionMode(mode: ConnectionMode | null): void {
+  runtimeConnectionModeOverride = mode;
+}
 
 export function getConnectionMode(): ConnectionMode {
+  if (runtimeConnectionModeOverride) return runtimeConnectionModeOverride;
+
   const mode =
     typeof process !== "undefined" ? (process.env?.EXPO_PUBLIC_CONNECTION_MODE ?? "").trim().toLowerCase() : "";
-  if (mode === "direct" || mode === "cloudflare") {
+  if (mode === "direct" || mode === "cloudflare" || mode === "tailscale") {
     return mode as ConnectionMode;
   }
   return "direct";

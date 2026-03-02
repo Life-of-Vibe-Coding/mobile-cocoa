@@ -3,7 +3,7 @@ import "./global.css";
 import React, { memo, useCallback, useMemo } from "react";
 
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { getDefaultServerConfig } from "@/core";
+import { getDefaultServerConfig, setRuntimeConnectionMode, getConnectionMode, type ConnectionMode } from "@/services/server/config";
 import { ThemeProvider } from "@/theme/index";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { ImageBackground, StyleSheet, View } from "react-native";
@@ -43,6 +43,8 @@ const AppInner = memo(function AppInner({
   chatActionState,
   sidebarState,
   serverConfig,
+  connectionMode,
+  onConnectionModeChange,
 }: {
   themeState: ThemeSessionStateState;
   sseState: SseSessionControllerState;
@@ -50,6 +52,8 @@ const AppInner = memo(function AppInner({
   chatActionState: ChatActionControllerState;
   sidebarState: SidebarState;
   serverConfig: Pick<IServerConfig, "getBaseUrl" | "resolvePreviewUrl">;
+  connectionMode: ConnectionMode;
+  onConnectionModeChange: (mode: ConnectionMode) => void;
 }) {
   const onChatFileSelect = useCallback((path: string) => {
     sidebarState.openSidebar();
@@ -76,6 +80,8 @@ const AppInner = memo(function AppInner({
         onChatFileSelect,
         onWorkspaceSelectedFromPicker: onWorkspaceSelected,
         serverConfig,
+        connectionMode,
+        onConnectionModeChange,
       }),
     [
       themeState,
@@ -90,6 +96,8 @@ const AppInner = memo(function AppInner({
       onChatFileSelect,
       onWorkspaceSelected,
       serverConfig,
+      connectionMode,
+      onConnectionModeChange,
     ]
   );
 
@@ -117,6 +125,12 @@ const AppInner = memo(function AppInner({
 export default function App() {
   const serverConfig = useMemo(() => getDefaultServerConfig(), []);
   const [isAutoApproveToolConfirm, setIsAutoApproveToolConfirm] = React.useState(true);
+  const [connectionMode, setConnectionMode] = React.useState<ConnectionMode>(() => getConnectionMode());
+
+  const handleConnectionModeChange = useCallback((mode: ConnectionMode) => {
+    setConnectionMode(mode);
+    setRuntimeConnectionMode(mode);
+  }, []);
   const sidebarState = useSidebarState();
   const memoizedSidebarState = useMemo(
     () => ({
@@ -148,9 +162,11 @@ export default function App() {
         chatActionState={chatActionState}
         sidebarState={memoizedSidebarState}
         serverConfig={serverConfig}
+        connectionMode={connectionMode}
+        onConnectionModeChange={handleConnectionModeChange}
       />
     ),
-    [serverConfig, memoizedSidebarState]
+    [serverConfig, memoizedSidebarState, connectionMode, handleConnectionModeChange]
   );
 
   const renderSse = useCallback(
