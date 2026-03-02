@@ -109,7 +109,7 @@ export function SystemMenuPopover({
                                         }}
                                         accessibilityRole="button"
                                         accessibilityLabel="Open Terminal"
-                                        className="w-14 h-14 rounded-2xl items-center justify-center active:scale-90 transition-transform"
+                                        className="w-14 h-14 rounded-2xl items-center justify-center"
                                         style={{ backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" }}
                                     >
                                         <TerminalIcon size={24} color={isDark ? "#E0E7FF" : "#4F46E5"} />
@@ -127,7 +127,7 @@ export function SystemMenuPopover({
                                         }}
                                         accessibilityRole="button"
                                         accessibilityLabel="Open Docker"
-                                        className="w-14 h-14 rounded-2xl items-center justify-center active:scale-90 transition-transform"
+                                        className="w-14 h-14 rounded-2xl items-center justify-center"
                                         style={{ backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" }}
                                     >
                                         <DockerIcon size={24} color={isDark ? "#38BDF8" : "#0EA5E9"} />
@@ -145,7 +145,7 @@ export function SystemMenuPopover({
                                         }}
                                         accessibilityRole="button"
                                         accessibilityLabel="Open Browser"
-                                        className="w-14 h-14 rounded-2xl items-center justify-center active:scale-90 transition-transform"
+                                        className="w-14 h-14 rounded-2xl items-center justify-center"
                                         style={{ backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" }}
                                     >
                                         <GlobeIcon size={24} color={isDark ? "#34D399" : "#10B981"} />

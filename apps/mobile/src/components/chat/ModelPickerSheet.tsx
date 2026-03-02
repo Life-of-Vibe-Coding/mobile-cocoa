@@ -61,7 +61,7 @@ export function ModelPickerSheet({
     }
   }, [isOpen]);
 
-  const snapPoints = useMemo(() => ["50%", "85%"], []);
+  const snapPoints = useMemo(() => ["90%"], []);
 
   const renderBackdrop = useCallback(
     (props: any) => (

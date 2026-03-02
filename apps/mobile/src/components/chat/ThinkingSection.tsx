@@ -2,7 +2,6 @@ import { ChevronDownIcon } from "@/components/icons/ChatActionIcons";
 import { triggerHaptic } from "@/designSystem";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, View as RNView } from "react-native";
-import Animated, { useAnimatedStyle, withSpring, LinearTransition, SlideInDown } from "react-native-reanimated";
 import { Text } from "@/components/ui/text";
 
 interface ThinkingSectionProps {
@@ -26,15 +25,8 @@ export function ThinkingSection({
         setExpanded(initiallyExpanded);
     }, [initiallyExpanded]);
 
-    const chevronStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ rotate: withSpring(expanded ? "180deg" : "0deg") }],
-        };
-    }, [expanded]);
-
     return (
-        <Animated.View
-            layout={LinearTransition.springify().damping(24).stiffness(120)}
+        <RNView
             className="my-2 rounded-xl border border-l-4 overflow-hidden"
             style={{
                 borderColor: theme.colors.border,
@@ -58,18 +50,15 @@ export function ThinkingSection({
                         {expanded ? "Reasoning" : "Show reasoning"}
                     </Text>
                 </RNView>
-                <Animated.View style={chevronStyle}>
+                <RNView style={{ transform: [{ rotate: expanded ? "180deg" : "0deg" }] }}>
                     <ChevronDownIcon size={14} color={theme.colors.textMuted} strokeWidth={2} />
-                </Animated.View>
+                </RNView>
             </Pressable>
             {expanded && (
-                <Animated.View
-                    entering={SlideInDown.springify().damping(24).stiffness(120)}
-                    className="px-4 pb-3"
-                >
+                <RNView className="px-4 pb-3">
                     {renderContent(content)}
-                </Animated.View>
+                </RNView>
             )}
-        </Animated.View>
+        </RNView>
     );
 }
