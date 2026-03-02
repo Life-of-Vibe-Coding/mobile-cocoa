@@ -16,10 +16,12 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
     Easing,
     interpolate,
+    interpolateColor,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
+    withSequence,
     withSpring,
     withTiming,
 } from "react-native-reanimated";
@@ -50,6 +52,8 @@ type SwipeablePageNavigatorProps = {
     swipeToOpenEnabled?: boolean;
     /** Edge width for the swipe-to-open gesture area. 0 = full screen (default: 0) */
     edgeWidth?: number;
+    /** Whether a background session just completed (turns the handle green briefly) */
+    hasSessionJustCompleted?: boolean;
 };
 
 export function SwipeablePageNavigator({
@@ -60,11 +64,14 @@ export function SwipeablePageNavigator({
     overlayPage,
     swipeToOpenEnabled = true,
     edgeWidth = 0,
+    hasSessionJustCompleted = false,
 }: SwipeablePageNavigatorProps) {
     // 0 = closed (overlay offscreen right), 1 = open (overlay fully visible)
     const progress = useSharedValue(isOpen ? 1 : 0);
     const isGestureActive = useSharedValue(false);
     const bounceTranslate = useSharedValue(0);
+    // 0 = default grey, 1 = green notification active
+    const notificationProgress = useSharedValue(0);
 
     // Initial bounce effect to draw attention
     useEffect(() => {
@@ -77,6 +84,20 @@ export function SwipeablePageNavigator({
             })
         );
     }, []);
+
+    // Green notification animation when a session completes
+    useEffect(() => {
+        if (hasSessionJustCompleted) {
+            // Flash green: quickly ramp up, hold, then fade out
+            notificationProgress.value = withSequence(
+                withTiming(1, { duration: 200, easing: Easing.out(Easing.ease) }),
+                withDelay(
+                    1600,
+                    withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) })
+                )
+            );
+        }
+    }, [hasSessionJustCompleted]);
 
     // Sync with programmatic open/close
     useEffect(() => {
@@ -172,13 +193,30 @@ export function SwipeablePageNavigator({
     });
 
     // Handle styling - fade out when completely open, opaque when touched, slight transparency otherwise
+    // During notification, override opacity to 1 so the green flash is clearly visible
     const handleOpacityStyle = useAnimatedStyle(() => {
         const baseOpacity = interpolate(progress.value, [0, 0.05], [isGestureActive.value ? 1 : 0.5, 0]);
+        const notifOpacity = notificationProgress.value;
+        const finalOpacity = Math.max(baseOpacity, notifOpacity);
         return {
-            opacity: swipeToOpenEnabled ? baseOpacity : 0,
+            opacity: swipeToOpenEnabled ? finalOpacity : 0,
             transform: [{ translateX: bounceTranslate.value }],
         };
     }, [swipeToOpenEnabled]);
+
+    // Handle visual: green color + scale pulse during notification
+    const handleNotificationStyle = useAnimatedStyle(() => {
+        const bgColor = interpolateColor(
+            notificationProgress.value,
+            [0, 1],
+            ['rgba(160, 160, 160, 0.7)', 'rgba(76, 217, 100, 0.9)']
+        );
+        const scale = interpolate(notificationProgress.value, [0, 0.5, 1], [1, 1.2, 1.05]);
+        return {
+            backgroundColor: bgColor,
+            transform: [{ scaleX: scale }, { scaleY: scale }],
+        };
+    });
 
     return (
         <Animated.View style={styles.container}>
@@ -193,7 +231,7 @@ export function SwipeablePageNavigator({
                     style={[styles.handleTouchArea, handleOpacityStyle]}
                     pointerEvents={swipeToOpenEnabled && !isOpen ? "auto" : "none"}
                 >
-                    <Animated.View style={styles.handleVisual} />
+                    <Animated.View style={[styles.handleVisual, handleNotificationStyle]} />
                 </Animated.View>
             </GestureDetector>
 

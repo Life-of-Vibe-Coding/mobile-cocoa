@@ -73,8 +73,6 @@ export type LastRunOptions = {
   allowedTools: string[];
   /** Whether --continue flag was used */
   useContinue: boolean;
-  /** Approval mode (e.g. auto-edit confirm handling) */
-  approvalMode?: string | null;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

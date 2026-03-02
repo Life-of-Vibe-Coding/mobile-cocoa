@@ -49,7 +49,7 @@ export function normalizeSubmitPayload(payload: {
   allowedTools?: unknown;
   provider?: unknown;
   model?: unknown;
-  approvalMode?: unknown;
+
   sessionId?: unknown;
   replaceRunning?: unknown;
 }) {
@@ -69,7 +69,6 @@ export function normalizeSubmitPayload(payload: {
       : undefined,
     provider: typeof payload.provider === "string" ? payload.provider : "gemini",
     model: typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : undefined,
-    approvalMode: payload.approvalMode === undefined ? undefined : String(payload.approvalMode),
     sessionId:
       typeof payload.sessionId === "string" && payload.sessionId.trim()
         ? payload.sessionId.trim()

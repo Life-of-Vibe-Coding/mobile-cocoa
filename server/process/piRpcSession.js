@@ -52,11 +52,9 @@ export function createPiRpcSession({
   let stdoutBuffer = "";
   let turnRunning = false;
   let pendingExtensionUiRequest = null;
-  let turnApprovalMode = null;
   /** Path to the JSONL session log. Set when a turn begins; cleared when it ends. */
   let piIoOutputPath = null;
   let turnCompleted = false;
-  const AUTO_APPROVE_MODES = new Set(["auto_edit"]);
 
   /** Append a single line to the JSONL log synchronously so it's on disk immediately. */
   function appendToSessionLog(data) {
@@ -98,23 +96,7 @@ export function createPiRpcSession({
     piIoOutputPath = null;
   }
 
-  function normalizeApprovalMode(rawMode) {
-    if (typeof rawMode !== "string") {
-      return null;
-    }
-    const normalized = rawMode.trim().toLowerCase();
-    if (!normalized) return null;
-    if (AUTO_APPROVE_MODES.has(normalized)) return normalized;
-    return normalized === "prompt" || normalized === "manual" ? normalized : null;
-  }
 
-  function shouldAutoApproveConfirm() {
-    if (turnApprovalMode === "auto_edit") {
-      return true;
-    }
-    const piCfgForApprove = loadPiConfig();
-    return piCfgForApprove.autoApproveToolConfirm === true || piCfgForApprove.autoApproveToolConfirm === 1;
-  }
 
   function setWaitingForPermission(waitingForPermission) {
     if (sessionManagement && typeof sessionManagement === "object") {
@@ -203,11 +185,6 @@ export function createPiRpcSession({
       const normalizedMethod = typeof method === "string" ? method.toLowerCase() : "";
       // Dialog methods (select, confirm, input, editor) need user response
       if (["select", "confirm", "input", "editor"].includes(normalizedMethod)) {
-        // Auto-approve confirm tool execution when requested for this turn.
-        if (normalizedMethod === "confirm" && shouldAutoApproveConfirm()) {
-          sendCommand({ type: "extension_ui_response", id: parsed.id, confirmed: true });
-          return;
-        }
         pendingExtensionUiRequest = { id: parsed.id, method, request: parsed };
         setWaitingForPermission(true);
         const askPayload = toAskUserQuestionPayload(parsed);
@@ -424,10 +401,9 @@ export function createPiRpcSession({
     });
   }
 
-  async function startTurn({ prompt, clientProvider, model, approvalMode }) {
+  async function startTurn({ prompt, clientProvider, model }) {
     turnCompleted = false;
     turnRunning = true;
-    turnApprovalMode = normalizeApprovalMode(approvalMode);
     setWaitingForPermission(false);
     closeIoOutputStream();
     await ensurePiProcess({
@@ -448,7 +424,6 @@ export function createPiRpcSession({
       permissionMode: null,
       allowedTools: [],
       useContinue: !!hasCompletedFirstRunRef?.value,
-      approvalMode: turnApprovalMode,
     }) + "\n");
 
     sendCommand({ type: "prompt", message: prompt });

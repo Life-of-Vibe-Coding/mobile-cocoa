@@ -24,7 +24,6 @@ import { Button, ButtonIcon } from "@/components/ui/button";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
-import { Switch } from "@/components/ui/switch";
 import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { VStack } from "@/components/ui/vstack";
 import { Popover, PopoverBackdrop, PopoverContent } from "@/components/ui/popover";
@@ -62,8 +61,6 @@ export interface InputPanelProps {
   waitingForUserInput: boolean;
   permissionMode: string | null;
   onSubmit: (prompt: string, permissionMode?: string) => void;
-  isAutoApproveToolConfirm: boolean;
-  onAutoApproveToolConfirmChange: (next: boolean) => void;
   pendingCodeRefs?: PendingCodeRef[];
   onRemoveCodeRef?: (index: number) => void;
   onTerminateAgent?: () => void;
@@ -86,8 +83,6 @@ export function InputPanel({
   waitingForUserInput,
   permissionMode,
   onSubmit,
-  isAutoApproveToolConfirm,
-  onAutoApproveToolConfirmChange,
   pendingCodeRefs = [],
   onRemoveCodeRef,
   onTerminateAgent,

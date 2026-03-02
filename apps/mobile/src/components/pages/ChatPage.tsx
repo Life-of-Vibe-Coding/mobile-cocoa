@@ -11,7 +11,8 @@ import type { Provider as BrandProvider } from "@/core/modelOptions";
 import { EntranceAnimation } from "@/designSystem";
 import type { Message, PendingAskUserQuestion, PermissionDenial } from "@/services/chat/hooks";
 import type { getTheme } from "@/theme/index";
-import React from "react";
+import { useSessionManagementStore } from "@/state/sessionManagementStore";
+import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
 type ModelOption = {
@@ -200,6 +201,45 @@ export function ChatPage({
 }: ChatPageProps) {
   const isFileViewerOpen = fileViewer.selectedFilePath != null;
 
+  // Detect when any session transitions from running → idling
+  const sessionStatuses = useSessionManagementStore((s) => s.sessionStatuses);
+  const prevStatusMapRef = useRef<Map<string, string>>(new Map());
+  const [hasSessionJustCompleted, setHasSessionJustCompleted] = useState(false);
+  const completionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const prevMap = prevStatusMapRef.current;
+    let justCompleted = false;
+
+    for (const session of sessionStatuses) {
+      const prevStatus = prevMap.get(session.id);
+      if (prevStatus === "running" && session.status === "idling") {
+        justCompleted = true;
+        break;
+      }
+    }
+
+    // Update the map for next comparison
+    const nextMap = new Map<string, string>();
+    for (const session of sessionStatuses) {
+      nextMap.set(session.id, session.status);
+    }
+    prevStatusMapRef.current = nextMap;
+
+    if (justCompleted) {
+      setHasSessionJustCompleted(true);
+      // Clear after the animation duration (2s + small buffer)
+      if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
+      completionTimerRef.current = setTimeout(() => {
+        setHasSessionJustCompleted(false);
+      }, 2100);
+    }
+
+    return () => {
+      if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
+    };
+  }, [sessionStatuses]);
+
   return (
     <ChatModalsSection
       context={context}
@@ -276,6 +316,7 @@ export function ChatPage({
             mainPage={mainContent}
             overlayPage={sessionPage}
             swipeToOpenEnabled={!sidebar.visible && !isFileViewerOpen && !modalHandlers.isAnyNonSessionModalOpen}
+            hasSessionJustCompleted={hasSessionJustCompleted}
           />
         );
       }}

@@ -129,8 +129,7 @@ export function createProcessManager(socket, { hasCompletedFirstRunRef, sessionM
 
     applySessionManagementConfig(sessionManagement, provider, model, hasCompletedFirstRunRef);
 
-    const approvalMode = normalizeTrimmedString(payload?.approvalMode);
-    piRpcSession.startTurn({ prompt, clientProvider: provider, model, approvalMode }).catch((err) => {
+    piRpcSession.startTurn({ prompt, clientProvider: provider, model }).catch((err) => {
       emitError(socket, err?.message || "Failed to start Pi RPC.");
       socket.emit("exit", { exitCode: 1 });
     });

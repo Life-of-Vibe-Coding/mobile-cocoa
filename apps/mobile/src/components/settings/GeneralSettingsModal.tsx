@@ -2,8 +2,6 @@ import { CloseIcon } from "@/components/icons/ChatActionIcons";
 import { Box } from "@/components/ui/box";
 import { Modal } from "@/components/ui/modal";
 import { Pressable } from "@/components/ui/pressable";
-import { ScrollView } from "@/components/ui/scroll-view";
-import { Switch } from "@/components/ui/switch";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
@@ -22,8 +20,6 @@ const CONNECTION_MODE_LABELS: Record<ConnectionMode, { label: string; descriptio
 export interface GeneralSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    isAutoApproveToolConfirm: boolean;
-    onAutoApproveToolConfirmChange: (next: boolean) => void;
     connectionMode: ConnectionMode;
     workspacePath: string | null;
 }
@@ -31,8 +27,6 @@ export interface GeneralSettingsModalProps {
 export function GeneralSettingsModal({
     isOpen,
     onClose,
-    isAutoApproveToolConfirm,
-    onAutoApproveToolConfirmChange,
     connectionMode,
     workspacePath,
 }: GeneralSettingsModalProps) {
@@ -81,29 +75,6 @@ export function GeneralSettingsModal({
                     showsVerticalScrollIndicator={false}
                 >
                     <VStack space="xl">
-                        {/* YOLO Mode Section */}
-                        <VStack space="md">
-                            <Text size="sm" bold style={{ color: mutedColor, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                                Automation & Permissions
-                            </Text>
-                            <HStack className="items-center justify-between p-4 rounded-xl border" style={{ backgroundColor: cardSurface, borderColor: panelBorder }}>
-                                <VStack space="xs" className="flex-1">
-                                    <Text size="md" bold style={{ color: titleColor }}>YOLO Mode</Text>
-                                    <Text size="xs" style={{ color: mutedColor }}>Skip confirmations for AI tool execution</Text>
-                                </VStack>
-                                <Switch
-                                    value={isAutoApproveToolConfirm}
-                                    onValueChange={(val: boolean) => {
-                                        triggerHaptic("light");
-                                        onAutoApproveToolConfirmChange(val);
-                                    }}
-                                    trackColor={{
-                                        false: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.1)",
-                                        true: accentColor,
-                                    }}
-                                />
-                            </HStack>
-                        </VStack>
 
                         {/* Connection Method Section — read-only, derived from config */}
                         <VStack space="md">

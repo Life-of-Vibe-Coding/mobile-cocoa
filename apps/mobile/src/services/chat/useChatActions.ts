@@ -101,7 +101,6 @@ export function useChatActions(params: UseChatActionsParams) {
       permissionMode?: string,
       allowedTools?: string[],
       codeRefs?: CodeRefPayload[],
-      approvalMode?: string
     ) => {
       const safePrompt = typeof prompt === "string" ? prompt : String(prompt ?? "");
       const fullPrompt = appendCodeRefsToPrompt(
@@ -123,7 +122,6 @@ export function useChatActions(params: UseChatActionsParams) {
         allowedTools,
         provider,
         model,
-        approvalMode,
         sessionId,
       });
 
@@ -270,7 +268,7 @@ export function useChatActions(params: UseChatActionsParams) {
   }, [setPendingAskQuestion, setWaitingForUserInput]);
 
   const retryAfterPermission = useCallback(
-    async (permissionMode?: string, approvalMode?: string, retryPrompt?: string) => {
+    async (permissionMode?: string, _approvalMode?: string, retryPrompt?: string) => {
       const denials = permissionDenials ?? [];
       const allowedTools = getAllowedToolsFromDenials(denials);
       const prompt =
@@ -285,7 +283,6 @@ export function useChatActions(params: UseChatActionsParams) {
           normalizeSubmitPayload({
             prompt,
             permissionMode: permissionMode ?? lastRunOptionsRef.current.permissionMode ?? undefined,
-            approvalMode,
             allowedTools,
             replaceRunning: true,
             provider,

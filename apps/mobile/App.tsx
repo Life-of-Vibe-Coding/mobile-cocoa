@@ -120,7 +120,6 @@ const AppInner = memo(function AppInner({
 
 export default function App() {
   const serverConfig = useMemo(() => getDefaultServerConfig(), []);
-  const [isAutoApproveToolConfirm, setIsAutoApproveToolConfirm] = React.useState(true);
   const connectionMode = useMemo(() => getConnectionMode(), []);
 
   const sidebarState = useSidebarState();
@@ -175,8 +174,6 @@ export default function App() {
         submitPermissionDecision={sseState.submitPermissionDecision}
         dismissAskQuestion={sseState.dismissAskQuestion}
         retryAfterPermission={sseState.retryAfterPermission}
-        isAutoApproveToolConfirm={isAutoApproveToolConfirm}
-        onAutoApproveToolConfirmChange={setIsAutoApproveToolConfirm}
         closeFileViewer={workspaceState.onCloseFileViewer}
         resetSession={sseState.resetSession}
         onSubmitSideEffects={() => {
@@ -189,7 +186,7 @@ export default function App() {
         }
       </ChatActionController>
     ),
-    [isAutoApproveToolConfirm, memoizedSidebarState.closeSidebar, renderChatAction]
+    [memoizedSidebarState.closeSidebar, renderChatAction]
   );
 
   const renderWorkspace = useCallback(

@@ -27,8 +27,6 @@ type ChatInputDockProps = {
   onOpenPortForwarding?: () => void;
   isCloudflareMode?: boolean;
   serverBaseUrl: string;
-  isAutoApproveToolConfirm: boolean;
-  onAutoApproveToolConfirmChange: (next: boolean) => void;
 };
 
 export function ChatInputDock({
@@ -50,8 +48,6 @@ export function ChatInputDock({
   onOpenPortForwarding,
   isCloudflareMode,
   serverBaseUrl,
-  isAutoApproveToolConfirm,
-  onAutoApproveToolConfirmChange,
 }: ChatInputDockProps) {
   return (
     <InputPanel
@@ -73,9 +69,7 @@ export function ChatInputDock({
       onOpenPortForwarding={onOpenPortForwarding}
       isCloudflareMode={isCloudflareMode}
       serverBaseUrl={serverBaseUrl}
-      permissionMode={isAutoApproveToolConfirm ? "auto_edit" : "prompt"}
-      isAutoApproveToolConfirm={isAutoApproveToolConfirm}
-      onAutoApproveToolConfirmChange={onAutoApproveToolConfirmChange}
+      permissionMode={null}
     />
   );
 }
