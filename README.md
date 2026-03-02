@@ -131,6 +131,21 @@ For deeper architectural insights, see the `docs/` folder:
 - `docs/server-session-registry.md` — how AI sessions, streaming states, and the LRU cache are managed.
 - `docs/server-utils.md` — core utilities powering the server infrastructure.
 
+### Adding Skills (UI)
+
+Use **Settings → Skill Configuration** to manage available agent skills:
+
+- Open the screen and tap **+ Add Skill**.
+- Switch to **Install from Catalog** to search curated skills (via `find-skills`) and install directly.
+- Switch to **Create Skill** to scaffold a new local skill with slug name, category, and metadata.
+- Newly installed/created skills are auto-enabled by default and can be disabled immediately if needed.
+- Open a skill row to view extended metadata (source, path, version/ref, install time) and source file contents in the detail sheet.
+
+For API-level behavior and payloads:
+- `GET /api/skills/search` for discoverable skills
+- `POST /api/skills/install` for catalog or direct GitHub install
+- `POST /api/skills/create` for local skill creation
+
 ## 3. Tech Stack
 - **Frontend / Mobile App:** React Native, Expo, TypeScript, TailwindCSS / Uniwind (for styling), Reanimated (for fluid animations).
 - **Backend Server:** Node.js, Express, Server-Sent Events (SSE) for real-time streaming.

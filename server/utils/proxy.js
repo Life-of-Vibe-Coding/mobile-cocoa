@@ -5,6 +5,9 @@
  * header or _targetPort query param. Used with cloudflared so the mobile app
  * can reach the dev server and preview (e.g. Vite) via a single tunnel URL.
  *
+ * Port whitelist: reads config/ports.json and only allows listed ports.
+ * Watches the file for changes so the whitelist hot-reloads without restart.
+ *
  * Routing:
  *   - X-Target-Port header or _targetPort query → localhost:<that port>
  *   - No header/param → localhost:3456 (main server)
@@ -17,14 +20,19 @@
  *   PROXY_DEFAULT_TARGET_PORT - Default backend when no X-Target-Port (default: 3456)
  *   PORT                    - Fallback for default target (default: 3456)
  */
+import fs from "fs";
 import http from "http";
-import { URL } from "url";
+import path from "path";
+import { URL, fileURLToPath } from "url";
 import {
   PROXY_BIND_HOST,
   PROXY_DEFAULT_TARGET_PORT,
   PROXY_LOOPBACK_HOST,
   TUNNEL_PROXY_PORT,
 } from "../config/index.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PORTS_CONFIG_PATH = path.resolve(__dirname, "../../config/ports.json");
 
 const PROXY_PORT = TUNNEL_PROXY_PORT;
 const DEFAULT_TARGET_PORT = PROXY_DEFAULT_TARGET_PORT;
@@ -35,6 +43,44 @@ const MAX_PORT = 65535;
 function isValidPort(port) {
   return Number.isInteger(port) && port >= MIN_PORT && port <= MAX_PORT;
 }
+
+// ── Port whitelist (hot-reloadable) ──────────────────────────────────────────
+
+let allowedPorts = new Set();
+
+function loadPortWhitelist() {
+  try {
+    const raw = fs.readFileSync(PORTS_CONFIG_PATH, "utf8");
+    const cfg = JSON.parse(raw);
+    if (cfg && Array.isArray(cfg.exposedPorts)) {
+      const next = new Set(cfg.exposedPorts.map((e) => e.port).filter(isValidPort));
+      next.add(DEFAULT_TARGET_PORT);
+      allowedPorts = next;
+      console.log(`[proxy] Port whitelist reloaded: ${[...allowedPorts].sort((a, b) => a - b).join(", ")}`);
+    }
+  } catch {
+    allowedPorts = new Set([DEFAULT_TARGET_PORT]);
+    console.log(`[proxy] No ports.json found, allowing default port ${DEFAULT_TARGET_PORT} only`);
+  }
+}
+
+loadPortWhitelist();
+
+try {
+  fs.watch(PORTS_CONFIG_PATH, { persistent: false }, (eventType) => {
+    if (eventType === "change" || eventType === "rename") {
+      setTimeout(() => loadPortWhitelist(), 100);
+    }
+  });
+} catch {
+  console.log("[proxy] Could not watch ports.json — whitelist changes require restart");
+}
+
+function isPortAllowed(port) {
+  return allowedPorts.has(port);
+}
+
+// ── HTTP proxy ───────────────────────────────────────────────────────────────
 
 const server = http.createServer((req, res) => {
   const targetPortHeader = req.headers["x-target-port"];
@@ -65,6 +111,16 @@ const server = http.createServer((req, res) => {
     } catch {
       // Malformed URL; use defaults
     }
+  }
+
+  if (!isPortAllowed(targetPort)) {
+    res.writeHead(403, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      error: "Port not exposed",
+      message: `Port ${targetPort} is not in the exposed ports whitelist. Add it via the mobile app's Port Forwarding settings.`,
+      port: targetPort,
+    }));
+    return;
   }
 
   const proxyOptions = {
@@ -104,6 +160,8 @@ const server = http.createServer((req, res) => {
   req.pipe(proxyReq, { end: true });
 });
 
+// ── WebSocket upgrade ────────────────────────────────────────────────────────
+
 server.on("upgrade", (req, socket, head) => {
   const targetPortHeader = req.headers["x-target-port"];
   let targetPort = DEFAULT_TARGET_PORT;
@@ -132,6 +190,11 @@ server.on("upgrade", (req, socket, head) => {
     } catch {
       // Malformed URL; use defaults
     }
+  }
+
+  if (!isPortAllowed(targetPort)) {
+    socket.destroy();
+    return;
   }
 
   const proxyOptions = {
@@ -167,12 +230,15 @@ server.on("upgrade", (req, socket, head) => {
   proxyReq.end();
 });
 
+// ── Start ────────────────────────────────────────────────────────────────────
+
 const BIND_HOST = PROXY_BIND_HOST;
 
 server.listen(PROXY_PORT, BIND_HOST, () => {
   console.log(`[proxy] Listening on ${BIND_HOST}:${PROXY_PORT}`);
   console.log(`[proxy] Default target: ${PROXY_LOOPBACK_HOST}:${DEFAULT_TARGET_PORT}`);
-  console.log(`[proxy] Use X-Target-Port or _targetPort query to route to other ports`);
+  console.log(`[proxy] Allowed ports: ${[...allowedPorts].sort((a, b) => a - b).join(", ")}`);
+  console.log(`[proxy] Watching ${PORTS_CONFIG_PATH} for whitelist changes`);
 });
 
 process.on("SIGINT", () => {

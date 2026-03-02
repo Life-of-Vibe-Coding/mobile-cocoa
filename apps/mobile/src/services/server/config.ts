@@ -14,13 +14,17 @@ import {
  */
 export type ConnectionMode = "direct" | "cloudflare";
 
-function getConnectionMode(): ConnectionMode {
+export function getConnectionMode(): ConnectionMode {
   const mode =
     typeof process !== "undefined" ? (process.env?.EXPO_PUBLIC_CONNECTION_MODE ?? "").trim().toLowerCase() : "";
   if (mode === "direct" || mode === "cloudflare") {
     return mode as ConnectionMode;
   }
   return "direct";
+}
+
+export function isCloudflareMode(): boolean {
+  return getConnectionMode() === "cloudflare";
 }
 
 function parseEnvHost(value: string): string | null {

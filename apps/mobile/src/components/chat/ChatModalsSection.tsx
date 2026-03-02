@@ -6,6 +6,7 @@ import { DockerManagerModal } from "@/components/docker/DockerManagerModal";
 import { useChatModalsController } from "@/components/hooks/useChatModalsController";
 import type { ChatPageContext, ChatPageModals } from "@/components/pages/ChatPage";
 import { SessionManagementPage } from "@/components/pages/SessionManagementPage";
+import { PortForwardingModal } from "@/components/ports/PortForwardingModal";
 import { PreviewWebViewModal } from "@/components/preview/PreviewWebViewModal";
 import { ProcessDashboardModal } from "@/components/processes/ProcessDashboardModal";
 import { SkillConfigurationView } from "@/components/settings/SkillConfigurationView";
@@ -98,6 +99,14 @@ export function ChatModalsSection({
       />
       <ProcessDashboardModal isOpen={modalStates.processes.isOpen} onClose={modalStates.processes.close} serverBaseUrl={modals.processes.serverBaseUrl} onOpenUrl={modals.processes.onOpenUrl} />
       <DockerManagerModal isOpen={modalStates.docker.isOpen} onClose={modalStates.docker.close} serverBaseUrl={modals.docker.serverBaseUrl} />
+      {modals.portForwarding.isCloudflareMode && (
+        <PortForwardingModal
+          isOpen={modalStates.portForwarding.isOpen}
+          onClose={modalStates.portForwarding.close}
+          serverBaseUrl={modals.portForwarding.serverBaseUrl}
+          onApplied={modals.portForwarding.onApplied}
+        />
+      )}
       <ModelPickerSheet
         isOpen={modalStates.modelPicker.isOpen}
         onClose={modalStates.modelPicker.close}

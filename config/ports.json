@@ -1,0 +1,9 @@
+{
+  "exposedPorts": [
+    {
+      "port": 3456,
+      "label": "Dev Server",
+      "builtin": true
+    }
+  ]
+}

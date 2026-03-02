@@ -3,7 +3,7 @@
  */
 import os from "os";
 import {
-  ENABLE_DOCKER_MANAGER, getWorkspaceCwd,
+  ENABLE_DOCKER_MANAGER, getOverlayNetwork, getWorkspaceCwd,
   loadModelsConfig,
   setWorkspaceCwd, SIDEBAR_REFRESH_INTERVAL_MS, WORKSPACE_ALLOWED_ROOT
 } from "../config/index.js";
@@ -16,6 +16,7 @@ export function registerConfigRoutes(app) {
   app.get("/api/config", (_, res) => {
     res.json({
       sidebarRefreshIntervalMs: SIDEBAR_REFRESH_INTERVAL_MS,
+      overlayNetwork: getOverlayNetwork(),
     });
   });
 

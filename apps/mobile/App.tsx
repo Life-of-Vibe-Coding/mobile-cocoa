@@ -17,6 +17,7 @@ import { buildChatPageProps } from "@/components/pages/buildChatPageProps";
 import { ChatPage } from "@/components/pages/ChatPage";
 import type { IServerConfig } from "@/core/types";
 import { useThemeAssets } from "@/hooks/useThemeAssets";
+import { getSubmitPermissionConfig } from "@/features/app/appConfig";
 
 const AppBackground = memo(function AppBackground() {
   const assets = useThemeAssets();
@@ -112,6 +113,9 @@ const AppInner = memo(function AppInner({
 
 export default function App() {
   const serverConfig = useMemo(() => getDefaultServerConfig(), []);
+  const [isAutoApproveToolConfirm, setIsAutoApproveToolConfirm] = React.useState(
+    () => getSubmitPermissionConfig().approvalMode === "auto_edit"
+  );
   const sidebarState = useSidebarState();
   const memoizedSidebarState = useMemo(
     () => ({
@@ -160,8 +164,11 @@ export default function App() {
         messages={sseState.messages}
         submitPrompt={sseState.submitPrompt}
         submitAskQuestionAnswer={sseState.submitAskQuestionAnswer}
+        submitPermissionDecision={sseState.submitPermissionDecision}
         dismissAskQuestion={sseState.dismissAskQuestion}
         retryAfterPermission={sseState.retryAfterPermission}
+        isAutoApproveToolConfirm={isAutoApproveToolConfirm}
+        onAutoApproveToolConfirmChange={setIsAutoApproveToolConfirm}
         closeFileViewer={workspaceState.onCloseFileViewer}
         resetSession={sseState.resetSession}
         onSubmitSideEffects={() => {

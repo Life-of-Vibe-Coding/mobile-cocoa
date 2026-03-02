@@ -219,6 +219,17 @@ export function DockerIcon({ color = "currentColor", size = 18 }: Omit<IconProps
   );
 }
 
+export function PortForwardIcon({ color = "currentColor", size = 18, strokeWidth = 1.8 }: IconProps) {
+  const stroke = getStrokeProps(color, strokeWidth);
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path {...stroke} d="M15 3h6v6" />
+      <Path {...stroke} d="M10 14 21 3" />
+      <Path {...stroke} d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </Svg>
+  );
+}
+
 export function BoxIcon({ color = "currentColor", size = 18, strokeWidth = 1.8 }: Omit<IconProps, "">) {
   const stroke = getStrokeProps(color, strokeWidth);
   return (

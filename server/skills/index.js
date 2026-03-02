@@ -6,7 +6,7 @@
  */
 import fs from "fs";
 import path from "path";
-import { projectRoot, loadSkillsConfig } from "../config/index.js";
+import { getWorkspaceCwd, projectRoot, loadSkillsConfig } from "../config/index.js";
 
 /** Load skill config values from config/skills.json (with fallbacks). */
 function getSkillsConfigValues() {
@@ -225,6 +225,41 @@ export function resolveAgentDir(workspaceCwd, projectRoot) {
  * Get enabled skill IDs from persistence.
  * @returns {string[]}
  */
+
+/**
+ * Absolute directory that hosts skill source folders.
+ * @returns {string}
+ */
+export function getSkillsLibraryDir() {
+  const cfg = loadSkillsConfig();
+  return path.join(projectRoot, cfg.skillsLibraryDir || "server/skills/library");
+}
+
+/**
+ * Absolute directory used by active Pi session for symlinked enabled skills.
+ * @returns {string}
+ */
+export function getSkillsEnabledDir() {
+  const cfg = loadSkillsConfig();
+  return path.join(projectRoot, cfg.skillsEnabledDir || "server/skills/enabled");
+}
+
+/**
+ * Sync enabled skill symlinks into the workspace/session folder.
+ * This is used by management routes after mutating enabled skill IDs.
+ *
+ * @returns {string[]} Absolute paths created in the enabled skills folder.
+ */
+export function syncEnabledSkillsToWorkspace() {
+  const cfg = loadSkillsConfig();
+  const skillsDir = path.join(projectRoot, cfg.skillsLibraryDir || "server/skills/library");
+  const workspaceCwd = getWorkspaceCwd();
+  const agentDir = resolveAgentDir(workspaceCwd, projectRoot);
+  const enabledDir = path.join(projectRoot, cfg.skillsEnabledDir || "server/skills/enabled");
+  return syncEnabledSkillsFolder(skillsDir, agentDir, enabledDir);
+}
+
+
 export function getEnabledIds() {
   try {
     const enabledFile = getSkillsConfigValues().enabledFilePath;

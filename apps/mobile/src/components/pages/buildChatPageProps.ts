@@ -5,6 +5,7 @@ import type { WorkspaceFileControllerState } from "@/components/controllers/Work
 import type { SidebarTab } from "@/components/hooks/useSidebarState";
 import type { ChatPageProps } from "@/components/pages/ChatPage";
 import type { IServerConfig } from "@/core/types";
+import { isCloudflareMode } from "@/services/server/config";
 import { basename } from "@/utils/path";
 
 export type BuildChatPagePropsInput = {
@@ -122,6 +123,10 @@ export function buildChatPageProps({
       },
       docker: {
         serverBaseUrl: serverConfig.getBaseUrl(),
+      },
+      portForwarding: {
+        serverBaseUrl: serverConfig.getBaseUrl(),
+        isCloudflareMode: isCloudflareMode(),
       },
       modelPicker: {
         currentServerUrl: serverConfig.getBaseUrl(),

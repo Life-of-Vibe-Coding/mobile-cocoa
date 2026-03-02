@@ -110,6 +110,45 @@ Configures skill discovery and categorization.
 
 Edit any JSON file directly. Changes to `models.json` are hot-reloaded on next API request. Changes to `pi.json` and `skills.json` take effect on next session creation (Pi process spawn).
 
+## [`skills-lock.json`](file:///Users/yifanxu/machine_learning/LoVC/vibe-coding-everywhere_v3/skills-lock.json)
+
+Tracks installed skill metadata for remote installs and locally created skills.
+
+### Structure
+
+```json
+{
+  "version": 1,
+  "lockVersion": 2,
+  "entries": [
+    {
+      "id": "refactor",
+      "name": "Refactor",
+      "path": "server/skills/library/refactor",
+      "source": "find-skills",
+      "sourceType": "find-skills",
+      "sourceUrl": "https://github.com/openai/skills/tree/main/skills/.curated/refactor",
+      "repoUrl": "https://github.com/openai/skills",
+      "sourceRef": "main",
+      "version": "latest",
+      "installedAt": "2026-03-03T00:00:00.000Z",
+      "createdAt": "2026-03-03T00:00:00.000Z",
+      "category": "Development"
+    }
+  ]
+}
+```
+
+### Semantics
+
+- `lockVersion` is updated by the skill management endpoints when writing lock metadata.
+- `source` and `sourceType` describe origin (`find-skills`, `github`, `skill-creator`, `local`).
+- `sourceRef`/`version` hold catalog ref or commit metadata when present.
+- `path` is the resolved folder in `skillsLibraryDir`.
+- `installedAt` and `createdAt` are used for UI display and audit history.
+
+Legacy formats with only a `skills` object map are still parsed for compatibility.
+
 ## How to Test
 
 ```bash

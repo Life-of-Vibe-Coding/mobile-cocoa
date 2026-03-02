@@ -29,6 +29,14 @@ type SkillDetail = {
   name: string;
   description: string;
   content: string;
+  source?: string;
+  sourceUrl?: string;
+  repoUrl?: string;
+  installedAt?: string;
+  path?: string;
+  sourceRef?: string;
+  version?: string;
+  isRemote?: boolean;
   children?: SkillChild[];
 };
 
@@ -241,6 +249,14 @@ export function SkillDetailSheet({
           id: data.id,
           name: data.name,
           description: data.description ?? "",
+          source: data.source,
+          sourceUrl: data.sourceUrl,
+          repoUrl: data.repoUrl,
+          installedAt: data.installedAt,
+          path: data.path,
+          sourceRef: data.sourceRef,
+          version: data.version,
+          isRemote: data.isRemote,
           content: data.content ?? "",
           children: data.children ?? [],
         });
@@ -272,6 +288,14 @@ export function SkillDetailSheet({
           id: data.id,
           name: data.name,
           description: data.description ?? "",
+          source: data.source,
+          sourceUrl: data.sourceUrl,
+          repoUrl: data.repoUrl,
+          installedAt: data.installedAt,
+          path: data.path,
+          sourceRef: data.sourceRef,
+          version: data.version,
+          isRemote: data.isRemote,
           content: data.content ?? "",
           children: data.children ?? [],
         });
@@ -313,6 +337,36 @@ export function SkillDetailSheet({
         </Box>
       ) : detail ? (
         <>
+          {(detail.source || detail.sourceRef || detail.version || detail.installedAt || detail.path || detail.sourceUrl || detail.repoUrl) ? (
+            <Box className="mb-6">
+              <Text className="mb-2.5 text-xs font-semibold uppercase tracking-wide" style={{ color: mutedColor }}>
+                Skill metadata
+              </Text>
+              <Box
+                className="rounded-xl border px-4 py-3"
+                style={{ borderColor: panelBorder, backgroundColor: cardSurface }}
+              >
+                <Text className="text-xs" style={{ color: mutedColor }}>
+                  {[
+                    detail.source ? `Source: ${detail.source}` : null,
+                    detail.sourceRef ? `Source ref: ${detail.sourceRef}` : null,
+                    detail.version ? `Version: ${detail.version}` : null,
+                    detail.isRemote !== undefined ? `Remote: ${detail.isRemote ? "yes" : "no"}` : null,
+                    detail.installedAt ? `Installed: ${new Date(detail.installedAt).toLocaleString()}` : null,
+                    detail.path ? `Path: ${detail.path}` : null,
+                    detail.repoUrl ? `Repo: ${detail.repoUrl}` : null,
+                    detail.sourceUrl ? `Source URL: ${detail.sourceUrl}` : null,
+                  ]
+                    .filter(Boolean)
+                    .map((line, idx) => (
+                      <Text key={`${line}-${idx}`} className="mb-1" style={{ color: mutedColor }}>
+                        {line}
+                      </Text>
+                    ))}
+                </Text>
+              </Box>
+            </Box>
+          ) : null}
           {detail.children && detail.children.length > 0 ? (
             <Box className="mb-6">
               <Text className="mb-2.5 text-xs font-semibold uppercase tracking-wide" style={{ color: mutedColor }}>

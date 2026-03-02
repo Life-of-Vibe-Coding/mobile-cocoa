@@ -75,6 +75,8 @@ export type ChatInputDockSectionProps = {
   onOpenSkillsConfig: () => void;
   onOpenProcesses: () => void;
   onOpenDocker: () => void;
+  onOpenPortForwarding: () => void;
+  isCloudflareMode?: boolean;
   onOpenModelPicker: () => void;
   onInputDockLayout: (height: number) => void;
 };
@@ -86,6 +88,8 @@ export function ChatInputDockSection({
   onOpenSkillsConfig,
   onOpenProcesses,
   onOpenDocker,
+  onOpenPortForwarding,
+  isCloudflareMode,
   onOpenModelPicker,
   onInputDockLayout,
 }: ChatInputDockSectionProps) {
@@ -117,6 +121,8 @@ export function ChatInputDockSection({
         onOpenModelPicker={onOpenModelPicker}
         onOpenSkillsConfig={onOpenSkillsConfig}
         onOpenDocker={onOpenDocker}
+        onOpenPortForwarding={onOpenPortForwarding}
+        isCloudflareMode={isCloudflareMode}
         serverBaseUrl={input.serverBaseUrl}
       />
     </Box>

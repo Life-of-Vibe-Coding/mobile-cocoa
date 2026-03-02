@@ -38,6 +38,7 @@ type ChatModalsControllerState = {
     skillsConfig: ModalController;
     processes: ModalController;
     docker: ModalController;
+    portForwarding: ModalController;
     modelPicker: ModalController;
   };
   selectedSkillId: string | null;
@@ -88,6 +89,7 @@ export function useChatModalsController({
   const skillsConfig = useModalController();
   const processes = useModalController();
   const docker = useModalController();
+  const portForwarding = useModalController();
   const modelPicker = useModalController();
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
 
@@ -115,6 +117,10 @@ export function useChatModalsController({
   const openDocker = useCallback(() => {
     docker.open();
   }, [docker.open]);
+
+  const openPortForwarding = useCallback(() => {
+    portForwarding.open();
+  }, [portForwarding.open]);
 
   const openModelPicker = useCallback(() => {
     modelPicker.open();
@@ -184,6 +190,7 @@ export function useChatModalsController({
       onOpenSkillsConfig: openSkillsConfig,
       onOpenProcesses: openProcesses,
       onOpenDocker: openDocker,
+      onOpenPortForwarding: openPortForwarding,
       onOpenModelPicker: openModelPicker,
       isSessionManagementOpen: sessionManagement.isOpen,
       isAnyModalOpen:
@@ -192,6 +199,7 @@ export function useChatModalsController({
         skillsConfig.isOpen ||
         processes.isOpen ||
         docker.isOpen ||
+        portForwarding.isOpen ||
         modelPicker.isOpen,
     }),
     [
@@ -199,12 +207,14 @@ export function useChatModalsController({
       openSkillsConfig,
       openProcesses,
       openDocker,
+      openPortForwarding,
       openModelPicker,
       workspacePicker.isOpen,
       sessionManagement.isOpen,
       skillsConfig.isOpen,
       processes.isOpen,
       docker.isOpen,
+      portForwarding.isOpen,
       modelPicker.isOpen,
     ]
   );
@@ -217,6 +227,7 @@ export function useChatModalsController({
       skillsConfig,
       processes,
       docker,
+      portForwarding,
       modelPicker,
     },
     selectedSkillId,

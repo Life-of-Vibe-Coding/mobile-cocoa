@@ -5,6 +5,7 @@ import {
   CloseIcon,
   DockerIcon,
   GlobeIcon,
+  PortForwardIcon,
   SkillIcon,
   VibeIcon,
   StopCircleIcon,
@@ -110,6 +111,8 @@ export interface InputPanelProps {
   onOpenModelPicker?: () => void;
   onOpenSkillsConfig?: () => void;
   onOpenDocker?: () => void;
+  onOpenPortForwarding?: () => void;
+  isCloudflareMode?: boolean;
   serverBaseUrl?: string;
 }
 
@@ -130,6 +133,8 @@ export function InputPanel({
   onOpenModelPicker,
   onOpenSkillsConfig,
   onOpenDocker,
+  onOpenPortForwarding,
+  isCloudflareMode,
   serverBaseUrl,
 }: InputPanelProps) {
   const theme = useTheme();
@@ -814,6 +819,32 @@ export function InputPanel({
                         >
                           <GlobeIcon size={22} color={theme.colors.info} />
                           <Text size="xs" style={{ color: theme.colors.textPrimary, fontWeight: "500", fontSize: 10 }}>Browser</Text>
+                        </Pressable>
+                      )}
+                      {isCloudflareMode && onOpenPortForwarding && (
+                        <Pressable
+                          onPress={() => {
+                            triggerHaptic("selection");
+                            setTerminalMenuVisible(false);
+                            onOpenPortForwarding();
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel="Port Forwarding"
+                          style={({ pressed }) => [
+                            {
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 56,
+                              height: 56,
+                              gap: 4,
+                              borderRadius: 16,
+                              backgroundColor: pressed ? (isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)") : "transparent",
+                            }
+                          ]}
+                        >
+                          <PortForwardIcon size={22} color={theme.colors.success} />
+                          <Text size="xs" style={{ color: theme.colors.textPrimary, fontWeight: "500", fontSize: 10 }}>Ports</Text>
                         </Pressable>
                       )}
                     </BlurView>

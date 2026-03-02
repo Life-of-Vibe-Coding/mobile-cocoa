@@ -119,6 +119,12 @@ type ChatPageDocker = {
   serverBaseUrl: string;
 };
 
+type ChatPagePortForwarding = {
+  serverBaseUrl: string;
+  isCloudflareMode: boolean;
+  onApplied?: () => void;
+};
+
 type ChatPageModelPicker = {
   currentServerUrl: string;
   onModelProviderChange: (provider: BrandProvider) => void;
@@ -154,6 +160,7 @@ export type ChatPageModals = {
   skills: ChatPageSkillsConfig;
   workspacePicker: ChatPageWorkspacePicker;
   docker: ChatPageDocker;
+  portForwarding: ChatPagePortForwarding;
   modelPicker: ChatPageModelPicker;
   processes: ChatPageProcesses;
   sessionManagement: ChatPageSessionManagement;
@@ -212,6 +219,7 @@ export function ChatPage({
                   sidebar={sidebar}
                   inputDock={inputDock}
                   modalHandlers={modalHandlers}
+                  portForwarding={modals.portForwarding}
                 />
 
                 {sidebar.visible && (

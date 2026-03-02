@@ -103,8 +103,12 @@ Enabled only when `ENABLE_DOCKER_MANAGER` is set.
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/skills` | GET | Discover all skills in the skills library |
+| `/api/skills/search` | GET | Search remote discoverable skills by `q` and `source` |
+| `/api/skills/sources` | GET | List enabled install/search sources and their status |
 | `/api/skills/:id` | GET | Get skill content (`SKILL.md`) |
 | `/api/skills/:id/children?path=...` | GET | Browse skill subdirectories |
+| `/api/skills/install` | POST | Install a skill from `find-skills` catalog or a GitHub URL |
+| `/api/skills/create` | POST | Create a local skill scaffold |
 | `/api/skills-enabled` | GET | List enabled skill IDs for current workspace |
 | `/api/skills-enabled` | POST | Update enabled skills. Body: `{ enabledIds: [...] }` |
 

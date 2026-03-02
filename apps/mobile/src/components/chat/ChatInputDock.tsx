@@ -24,6 +24,8 @@ type ChatInputDockProps = {
   onOpenModelPicker: () => void;
   onOpenSkillsConfig: () => void;
   onOpenDocker: () => void;
+  onOpenPortForwarding?: () => void;
+  isCloudflareMode?: boolean;
   serverBaseUrl: string;
   isAutoApproveToolConfirm: boolean;
   onAutoApproveToolConfirmChange: (next: boolean) => void;
@@ -45,6 +47,8 @@ export function ChatInputDock({
   onOpenModelPicker,
   onOpenSkillsConfig,
   onOpenDocker,
+  onOpenPortForwarding,
+  isCloudflareMode,
   serverBaseUrl,
   isAutoApproveToolConfirm,
   onAutoApproveToolConfirmChange,
@@ -67,6 +71,8 @@ export function ChatInputDock({
       onOpenModelPicker={onOpenModelPicker}
       onOpenSkillsConfig={onOpenSkillsConfig}
       onOpenDocker={onOpenDocker}
+      onOpenPortForwarding={onOpenPortForwarding}
+      isCloudflareMode={isCloudflareMode}
       serverBaseUrl={serverBaseUrl}
       isAutoApproveToolConfirm={isAutoApproveToolConfirm}
       onAutoApproveToolConfirmChange={onAutoApproveToolConfirmChange}
