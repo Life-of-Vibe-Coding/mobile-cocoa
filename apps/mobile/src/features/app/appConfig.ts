@@ -2,7 +2,7 @@ import type { ModelOption } from "@/core/modelOptions";
 import type { Message } from "@/core";
 import { getDefaultModelForProvider, getModelOptionsForProvider } from "@/services/server/modelsApi";
 import { ColorMode, ColorModePreference } from "@/theme";
-import { getBackendPermissionMode, type PermissionModeUI } from "@/utils/permission";
+import { getBackendPermissionMode } from "@/utils/permission";
 
 export type ModalSessionItem = {
   id: string;
@@ -26,15 +26,6 @@ export function getThemeMode(preference: ColorModePreference, systemMode: ColorM
   return preference;
 }
 
-export function getDefaultPermissionModeUI(): PermissionModeUI {
-  return typeof process !== "undefined" &&
-    (process.env?.EXPO_PUBLIC_DEFAULT_PERMISSION_MODE === "always_ask" ||
-      process.env?.EXPO_PUBLIC_DEFAULT_PERMISSION_MODE === "acceptEdits" ||
-      process.env?.EXPO_PUBLIC_DEFAULT_PERMISSION_MODE === "acceptPermissions")
-    ? "always_ask"
-    : "yolo";
-}
-
 /**
  * Return the default model for a provider.
  * Reads from the server-fetched config cache (falls back to built-in defaults).
@@ -51,19 +42,6 @@ export function getModelOptions(provider: string): ModelOption[] {
   return getModelOptionsForProvider(provider);
 }
 
-export function getSubmitPermissionConfig(permissionModeUI: PermissionModeUI, provider: string) {
-  const backend = getBackendPermissionMode(permissionModeUI, provider);
-  const codexOptions =
-    provider === "codex"
-      ? {
-          askForApproval: backend.askForApproval,
-          fullAuto: backend.fullAuto,
-          yolo: backend.yolo,
-        }
-      : undefined;
-
-  return {
-    backend,
-    codexOptions,
-  };
+export function getSubmitPermissionConfig() {
+  return getBackendPermissionMode();
 }

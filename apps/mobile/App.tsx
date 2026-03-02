@@ -156,7 +156,6 @@ export default function App() {
     ) => (
       <ChatActionController
         provider={themeState.provider}
-        permissionModeUI={themeState.permissionModeUI}
         sessionId={sseState.sessionId}
         messages={sseState.messages}
         submitPrompt={sseState.submitPrompt}

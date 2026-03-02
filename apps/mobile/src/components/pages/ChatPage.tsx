@@ -9,7 +9,6 @@ import type { Provider as BrandProvider } from "@/core/modelOptions";
 import { EntranceAnimation } from "@/designSystem";
 import type { Message, PendingAskUserQuestion, PermissionDenial } from "@/services/chat/hooks";
 import type { getTheme } from "@/theme/index";
-import type { PermissionModeUI } from "@/utils/permission";
 import React from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
@@ -37,7 +36,6 @@ export type ChatPageContext = {
   model: string;
   modelOptions: ModelOption[];
   providerModelOptions: Record<BrandProvider, ModelOption[]>;
-  permissionModeUI: PermissionModeUI;
 };
 
 export type ChatPageRuntime = {

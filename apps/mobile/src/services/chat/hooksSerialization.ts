@@ -52,10 +52,6 @@ export function normalizeSubmitPayload(payload: {
   approvalMode?: unknown;
   sessionId?: unknown;
   replaceRunning?: unknown;
-  effort?: unknown;
-  askForApproval?: unknown;
-  fullAuto?: unknown;
-  yolo?: unknown;
 }) {
   return {
     prompt:
@@ -71,7 +67,7 @@ export function normalizeSubmitPayload(payload: {
           .map((item) => (typeof item === "string" ? item : String(item)))
           .filter(Boolean)
       : undefined,
-    provider: typeof payload.provider === "string" ? payload.provider : "codex",
+    provider: typeof payload.provider === "string" ? payload.provider : "gemini",
     model: typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : undefined,
     approvalMode: payload.approvalMode === undefined ? undefined : String(payload.approvalMode),
     sessionId:
@@ -79,10 +75,5 @@ export function normalizeSubmitPayload(payload: {
         ? payload.sessionId.trim()
         : undefined,
     replaceRunning: Boolean(payload.replaceRunning),
-    effort: typeof payload.effort === "string" ? payload.effort : undefined,
-    askForApproval:
-      payload.askForApproval === undefined ? undefined : String(payload.askForApproval),
-    fullAuto: typeof payload.fullAuto === "boolean" ? payload.fullAuto : undefined,
-    yolo: typeof payload.yolo === "boolean" ? payload.yolo : undefined,
   };
 }

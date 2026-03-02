@@ -5,13 +5,11 @@ import type { Provider as BrandProvider } from "@/core/modelOptions";
 import { triggerHaptic } from "@/designSystem";
 import { getSubmitPermissionConfig } from "@/features/app/appConfig";
 import { useChat, type Message } from "@/services/chat/hooks";
-import type { PermissionModeUI } from "@/utils/permission";
 
 type SseApi = ReturnType<typeof useChat>;
 
 export type ChatActionControllerProps = {
   provider: BrandProvider;
-  permissionModeUI: PermissionModeUI;
   sessionId?: string | null;
   messages: Message[];
   submitPrompt: SseApi["submitPrompt"];
@@ -41,7 +39,6 @@ export type ChatActionControllerState = {
 
 export const ChatActionController = memo(function ChatActionController({
   provider,
-  permissionModeUI,
   sessionId: _sessionId,
   messages,
   submitPrompt,
@@ -60,14 +57,13 @@ export const ChatActionController = memo(function ChatActionController({
 
   const onSubmitPrompt = useCallback(
     (prompt: string) => {
-      const { backend, codexOptions } = getSubmitPermissionConfig(permissionModeUI, provider);
+      const backend = getSubmitPermissionConfig();
       submitPrompt(
         prompt,
-        backend.permissionMode,
+        undefined,
         undefined,
         pendingCodeRefs.length ? pendingCodeRefs : undefined,
-        backend.approvalMode,
-        codexOptions
+        backend.approvalMode
       );
 
       if (pendingCodeRefs.length) {
@@ -78,8 +74,6 @@ export const ChatActionController = memo(function ChatActionController({
     },
     [
       onSubmitSideEffects,
-      permissionModeUI,
-      provider,
       submitPrompt,
       pendingCodeRefs,
     ]
@@ -107,10 +101,10 @@ export const ChatActionController = memo(function ChatActionController({
   }, [dismissAskQuestion]);
 
   const onRetryPermission = useCallback(() => {
-    const { backend } = getSubmitPermissionConfig(permissionModeUI, provider);
+    const backend = getSubmitPermissionConfig();
     const lastUserMessage = [...messagesRef.current].reverse().find((message) => message.role === "user");
-    retryAfterPermission(backend.permissionMode, backend.approvalMode, lastUserMessage?.content);
-  }, [permissionModeUI, provider, retryAfterPermission]);
+    retryAfterPermission(undefined, backend.approvalMode, lastUserMessage?.content);
+  }, [retryAfterPermission]);
 
   const onCommitByAI = useCallback(
     (userRequest: string) => {

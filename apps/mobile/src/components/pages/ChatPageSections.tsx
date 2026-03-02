@@ -105,7 +105,6 @@ export function ChatInputDockSection({
         connected={runtime.connected}
         sessionRunning={runtime.sessionRunning}
         waitingForUserInput={runtime.waitingForUserInput}
-        permissionModeUI={context.permissionModeUI}
         onSubmit={input.onSubmitPrompt}
         pendingCodeRefs={input.pendingCodeRefs}
         onRemoveCodeRef={input.onRemoveCodeRef}

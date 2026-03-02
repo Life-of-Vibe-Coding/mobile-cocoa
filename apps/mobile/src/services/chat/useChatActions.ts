@@ -101,8 +101,7 @@ export function useChatActions(params: UseChatActionsParams) {
       permissionMode?: string,
       allowedTools?: string[],
       codeRefs?: CodeRefPayload[],
-      approvalMode?: string,
-      codexOptions?: { askForApproval?: string; fullAuto?: boolean; yolo?: boolean; effort?: string }
+      approvalMode?: string
     ) => {
       const safePrompt = typeof prompt === "string" ? prompt : String(prompt ?? "");
       const fullPrompt = appendCodeRefsToPrompt(
@@ -126,12 +125,6 @@ export function useChatActions(params: UseChatActionsParams) {
         model,
         approvalMode,
         sessionId,
-        ...(provider === "codex" && { effort: codexOptions?.effort ?? "medium" }),
-        ...(codexOptions && {
-          askForApproval: codexOptions.askForApproval,
-          fullAuto: codexOptions.fullAuto,
-          yolo: codexOptions.yolo,
-        }),
       });
 
       const resetRunningState = () => {

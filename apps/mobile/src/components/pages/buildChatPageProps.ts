@@ -47,7 +47,6 @@ export function buildChatPageProps({
       model: themeState.model,
       modelOptions: themeState.modelOptions,
       providerModelOptions: themeState.providerModelOptions,
-      permissionModeUI: themeState.permissionModeUI,
     },
     runtime: {
       connected: sseState.connected,

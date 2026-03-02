@@ -3,13 +3,9 @@ import { useColorScheme } from "react-native";
 
 import { createAppStyles } from "@/components/styles/appStyles";
 import type { ModelOption, Provider as BrandProvider } from "@/core/modelOptions";
-import {
-  getDefaultPermissionModeUI,
-  getThemeMode
-} from "@/features/app/appConfig";
+import { getThemeMode } from "@/features/app/appConfig";
 import { useModelsConfig } from "@/hooks/useModelsConfig";
 import { buildTheme, getTheme } from "@/theme/index";
-import type { PermissionModeUI } from "@/utils/permission";
 
 export type ThemeSessionStateProps = {
   children: (state: ThemeSessionStateState) => React.ReactNode;
@@ -23,7 +19,6 @@ export type ThemeSessionStateState = {
   styles: ReturnType<typeof createAppStyles>;
   modelOptions: ModelOption[];
   providerModelOptions: Record<string, ModelOption[]>;
-  permissionModeUI: PermissionModeUI;
   provider: BrandProvider;
   setProvider: (provider: BrandProvider) => void;
 };
@@ -66,8 +61,6 @@ export const ThemeSessionState = memo(function ThemeSessionState({ children }: T
     }
   }, [provider, model, modelsForProvider, providerDefaultModel]);
 
-  const permissionModeUI = useMemo(() => getDefaultPermissionModeUI(), []);
-
   const state = useMemo(
     () => ({
       provider,
@@ -79,9 +72,8 @@ export const ThemeSessionState = memo(function ThemeSessionState({ children }: T
       styles,
       modelOptions,
       providerModelOptions,
-      permissionModeUI,
     }),
-    [provider, setProvider, model, setModel, themeMode, theme, styles, modelOptions, providerModelOptions, permissionModeUI]
+    [provider, setProvider, model, setModel, themeMode, theme, styles, modelOptions, providerModelOptions]
   );
 
   return children(state);
