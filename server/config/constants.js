@@ -12,5 +12,8 @@ export const SSE_PROCESS_START_WAIT_MS = 6_000;
 /** Interval in ms to poll for process start during active-only SSE connections. */
 export const SSE_PROCESS_START_POLL_MS = 150;
 
+/** Interval in ms to send SSE keepalive comments (prevents Cloudflare tunnel from killing idle streams). */
+export const SSE_KEEPALIVE_INTERVAL_MS = 10_000;
+
 /** Current session file format version. */
 export const SESSION_FILE_VERSION = 3;

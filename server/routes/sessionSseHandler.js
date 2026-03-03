@@ -61,26 +61,33 @@ export function handleSsePolling({ session, sessionId, req, res }) {
 
     req.on("close", cleanup);
 
+    // Subscribe IMMEDIATELY to capture events emitted during polling.
+    // This fixes the race where the process starts+finishes before the first poll check.
+    session.subscribers.add(res);
+
+    // Replay any buffered events to this late subscriber (fixes race condition)
+    if (session.sseAdapter?.replayBufferedEvents) {
+        session.sseAdapter.replayBufferedEvents(res);
+    }
+
     const check = () => {
         if (isClosed()) {
             cleanup();
             return;
         }
         if (session.processManager.processRunning?.()) {
-            if (isClosed()) {
-                cleanup();
-                return;
-            }
+            // Process is running - stay subscribed, stop polling
             done = true;
-            session.subscribers.add(res);
             if (process.env.DEBUG_SSE) {
-                console.log(`[SSE] sessionId=${sessionId} process started after ${Date.now() - start}ms, subscribed`);
+                console.log(`[SSE] sessionId=${sessionId} process started after ${Date.now() - start}ms`);
             }
             return;
         }
         if (Date.now() - start >= SSE_PROCESS_START_WAIT_MS) {
+            // Timeout - unsubscribe and end connection
             done = true;
             if (pollTimer) clearTimeout(pollTimer);
+            session.subscribers.delete(res);
             res.write(`event: end\ndata: {"exitCode": 0}\n\n`);
             res.end();
             return;

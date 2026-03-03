@@ -1,7 +1,9 @@
 /**
- * Fetch-based SSE client using POST.
- * Used for Cloudflare Quick Tunnel, which buffers GET-based SSE until connection close.
- * POST-based SSE streams correctly through the tunnel.
+ * Fetch-based SSE client using POST with Streams API.
+ *
+ * NOTE: This client is NOT used in Cloudflare mode (which uses WebSocket via
+ * wsConnection.ts). This module is retained for direct-mode use or future
+ * environments where fetch streaming works.
  *
  * Implements EventSourceLike so it can be used as a drop-in replacement.
  */
@@ -14,6 +16,8 @@ export type FetchSseOptions = {
 };
 
 type Listener = (...args: unknown[]) => void;
+
+const FETCH_SSE_TIMEOUT_MS = 5_000;
 
 export function createFetchSseClient(options: FetchSseOptions): EventSourceLike {
   const { url, body, signal } = options;
@@ -48,6 +52,16 @@ export function createFetchSseClient(options: FetchSseOptions): EventSourceLike 
   const controller = new AbortController();
   const effectiveSignal = signal || controller.signal;
 
+  // Abort fetch if no streaming data arrives within the timeout.
+  // Prevents hanging for minutes when the environment doesn't support
+  // response.body streaming (e.g. Cloudflare HTTP/2).
+  const timeoutId = setTimeout(() => {
+    if (!closed && !aborted) {
+      controller.abort();
+      emit("error", new Error("No response body"));
+    }
+  }, FETCH_SSE_TIMEOUT_MS);
+
   fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -58,41 +72,40 @@ export function createFetchSseClient(options: FetchSseOptions): EventSourceLike 
   })
     .then(async (response) => {
       if (closed || aborted) return;
-      // #region agent log
-      console.log("[DBG-099c89] fetch SSE response", { ok: response.ok, status: response.status, hasBody: !!response.body });
-      // #endregion
       if (!response.ok) {
+        clearTimeout(timeoutId);
         emit("error", { status: response.status, statusText: response.statusText });
         return;
       }
       emit("open");
 
-      const reader = response.body?.getReader();
-      // #region agent log
-      console.log("[DBG-099c89] fetch SSE reader", { hasReader: !!reader });
-      // #endregion
+      let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+      try {
+        reader = response.body?.getReader();
+      } catch (readerErr) {
+        clearTimeout(timeoutId);
+        emit("error", readerErr);
+        return;
+      }
       if (!reader) {
+        clearTimeout(timeoutId);
         emit("error", new Error("No response body"));
         return;
       }
 
+      clearTimeout(timeoutId);
+
       const decoder = new TextDecoder();
       let buffer = "";
-      let readCount = 0;
 
       try {
         while (true) {
           if (closed || aborted) break;
           const { value, done } = await reader.read();
           if (done) break;
-          readCount++;
           const decoded = decoder.decode(value, { stream: true });
-          // #region agent log
-          if (readCount <= 5 || readCount % 20 === 0) { console.log("[DBG-099c89] fetch SSE read", { readNum: readCount, chunkLen: decoded.length, ts: Date.now() }); }
-          // #endregion
           buffer += decoded;
 
-          // Parse SSE: events are separated by double newline
           const parts = buffer.split("\n\n");
           buffer = parts.pop() ?? "";
 
@@ -129,6 +142,7 @@ export function createFetchSseClient(options: FetchSseOptions): EventSourceLike 
       }
     })
     .catch((err) => {
+      clearTimeout(timeoutId);
       if (!aborted && !closed) {
         emit("error", err);
       }
@@ -138,6 +152,7 @@ export function createFetchSseClient(options: FetchSseOptions): EventSourceLike 
     addEventListener,
     removeEventListener,
     close: () => {
+      clearTimeout(timeoutId);
       close();
       controller.abort();
     },

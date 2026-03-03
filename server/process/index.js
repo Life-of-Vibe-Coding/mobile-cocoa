@@ -21,7 +21,10 @@ function normalizeTrimmedString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export function shutdown() {
+const SHUTDOWN_GRACE_MS = 5_000;
+
+export function shutdown(signal, httpServer) {
+  console.log(`[server] Shutting down (${signal ?? "unknown"})...`);
   for (const child of globalSpawnChildren) {
     try {
       if (process.platform !== "win32" && child.pid) {
@@ -33,7 +36,12 @@ export function shutdown() {
     } catch (_) { }
   }
   globalSpawnChildren.clear();
-  process.exit(0);
+  if (httpServer) {
+    httpServer.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), SHUTDOWN_GRACE_MS);
+  } else {
+    process.exit(0);
+  }
 }
 
 function resolveProvider(fromPayload) {
@@ -163,11 +171,23 @@ export function createProcessManager(socket, { hasCompletedFirstRunRef, sessionM
   };
 }
 
+/** Max events to buffer per session for late subscribers */
+const EVENT_BUFFER_MAX_SIZE = 200;
+/** Max age of buffered events in ms (clear older events) */
+const EVENT_BUFFER_MAX_AGE_MS = 30_000;
+
 /**
  * Creates a socket-like adapter that broadcasts to session.subscribers (SSE responses).
  * Used by the REST+SSE session flow instead of Socket.IO.
+ *
+ * Includes event buffering: when no subscribers exist, events are buffered so late
+ * subscribers can catch up. This fixes the race condition where the mobile SSE
+ * connection arrives after the process has already emitted events.
  */
 function createSseSocketAdapter(sessionId, session, host = DEFAULT_SSE_HOST) {
+  // Event buffer for late subscribers
+  const eventBuffer = [];
+
   const adapter = {
     id: sessionId,
     handshake: {
@@ -175,34 +195,121 @@ function createSseSocketAdapter(sessionId, session, host = DEFAULT_SSE_HOST) {
       address: "",
     },
     conn: { remoteAddress: "" },
-    emit(event, data) {
-      const subscribers = session.subscribers;
-      if (!subscribers || subscribers.size === 0) return;
-      const line = typeof data === "string" ? data : JSON.stringify(data);
-      const sseData = line.replace(/\r?\n/g, "\ndata: ");
-      const payload = `data: ${sseData}\n\n`;
-      const endPayload = SSE_END_EVENTS.has(event)
-        ? `event: end\ndata: ${JSON.stringify(data ?? {})}\n\n`
-        : null;
-      for (const response of subscribers) {
+
+    /**
+     * Replay buffered events to a new SSE subscriber.
+     */
+    replayBufferedEvents(response) {
+      if (eventBuffer.length === 0) return;
+      for (const { payload, endPayload } of eventBuffer) {
         try {
-          if (response.writableEnded) continue;
-          // #region agent log
-          fetch('http://127.0.0.1:7858/ingest/d7d38859-3779-4ab0-968f-91cf91a262e5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'099c89'},body:JSON.stringify({sessionId:'099c89',location:'process/index.js:emit',message:'SSE adapter write',data:{event,payloadLen:payload.length,subscriberCount:subscribers.size,isEnd:!!endPayload},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
+          if (response.writableEnded) break;
           if (endPayload) {
             response.write(endPayload);
             response.end();
+            break;
           } else {
             response.write(payload);
           }
-        } catch (_) { }
+        } catch (err) {
+          break;
+        }
+      }
+    },
+
+    /**
+     * Replay buffered events to a new WebSocket subscriber.
+     */
+    replayBufferedEventsWs(ws) {
+      if (eventBuffer.length === 0) return;
+      for (const { rawLine, isEnd, rawData } of eventBuffer) {
+        try {
+          if (ws.readyState !== 1 /* OPEN */) break;
+          if (isEnd) {
+            ws.send(JSON.stringify({ event: "end", data: rawData }));
+            ws.close();
+            break;
+          } else {
+            ws.send(JSON.stringify({ event: "message", data: rawLine }));
+          }
+        } catch (err) {
+          break;
+        }
+      }
+    },
+
+    /**
+     * Clear the event buffer (called after stream ends or on cleanup).
+     */
+    clearBuffer() {
+      eventBuffer.length = 0;
+    },
+
+    emit(event, data) {
+      const line = typeof data === "string" ? data : JSON.stringify(data);
+      const sseData = line.replace(/\r?\n/g, "\ndata: ");
+      const payload = `data: ${sseData}\n\n`;
+      const isEnd = SSE_END_EVENTS.has(event);
+      const endPayload = isEnd
+        ? `event: end\ndata: ${JSON.stringify(data ?? {})}\n\n`
+        : null;
+      const rawData = isEnd ? JSON.stringify(data ?? {}) : null;
+
+      // Always buffer events (for late subscribers, both SSE and WS)
+      const now = Date.now();
+      eventBuffer.push({ payload, endPayload, rawLine: line, isEnd, rawData, ts: now });
+
+      // Prune old events from buffer
+      while (eventBuffer.length > EVENT_BUFFER_MAX_SIZE) {
+        eventBuffer.shift();
+      }
+      while (eventBuffer.length > 0 && now - eventBuffer[0].ts > EVENT_BUFFER_MAX_AGE_MS) {
+        eventBuffer.shift();
+      }
+
+      // Broadcast to SSE subscribers
+      const subscribers = session.subscribers;
+      if (subscribers && subscribers.size > 0) {
+        for (const response of subscribers) {
+          try {
+            if (response.writableEnded) continue;
+            if (endPayload) {
+              response.write(endPayload);
+              response.end();
+            } else {
+              response.write(payload);
+            }
+          } catch (err) {
+            // swallow write errors
+          }
+        }
+      }
+
+      // Broadcast to WebSocket subscribers
+      const wsSubscribers = session.wsSubscribers;
+      if (wsSubscribers && wsSubscribers.size > 0) {
+        const wsPayload = isEnd
+          ? JSON.stringify({ event: "end", data: rawData })
+          : JSON.stringify({ event: "message", data: line });
+        for (const ws of wsSubscribers) {
+          try {
+            if (ws.readyState !== 1 /* OPEN */) continue;
+            ws.send(wsPayload);
+            if (isEnd) ws.close();
+          } catch (err) {
+            // swallow send errors
+          }
+        }
       }
     },
     setHost(hostValue) {
       adapter.handshake.headers.host = hostValue || DEFAULT_SSE_HOST;
     },
   };
+
+  // Attach adapter to session for access by stream handler
+  session.sseAdapter = adapter;
+
   return adapter;
 }
 

@@ -65,10 +65,32 @@ process.on("SIGTERM", () => {
 // 1. Proxy (port 9443) — background
 run("proxy", "node", ["server/utils/proxy.js"], { inherit: false });
 
-// 2. Dev server (port 3456) — background (OVERLAY_NETWORK=tunnel so server knows traffic goes via proxy)
-setTimeout(() => {
-  run("dev", npm, ["run", "dev"], { inherit: false, env: { ...process.env, OVERLAY_NETWORK: "tunnel", DEBUG_SSE: "1" } });
-}, 1500);
+// 2. Dev server (port 3456) — background with auto-restart.
+// fatal: false prevents the entire stack from dying if the AI agent kills the server.
+const DEV_MAX_RESTARTS = 5;
+const DEV_RESTART_BASE_MS = 2000;
+let devRestartCount = 0;
+
+function startDevServer() {
+  const child = run("dev", npm, ["run", "dev"], {
+    inherit: false,
+    fatal: false,
+    env: { ...process.env, OVERLAY_NETWORK: "tunnel", DEBUG_SSE: "1" },
+  });
+  child.on("exit", (code) => {
+    if (code === 0 || code === null) return;
+    if (devRestartCount >= DEV_MAX_RESTARTS) {
+      console.error(`[dev] max restarts (${DEV_MAX_RESTARTS}) exceeded, giving up`);
+      return;
+    }
+    devRestartCount++;
+    const delay = Math.min(DEV_RESTART_BASE_MS * Math.pow(2, devRestartCount - 1), 30_000);
+    console.log(`[dev] crashed (code ${code}), restarting in ${delay}ms (attempt ${devRestartCount}/${DEV_MAX_RESTARTS})`);
+    setTimeout(startDevServer, delay);
+  });
+}
+
+setTimeout(startDevServer, 1500);
 
 // 3. Cloudflare tunnel — foreground so user sees the URL; capture and print Expo command
 const urlRegex = /https:\/\/[^\s"'<>]+\.(trycloudflare\.com|cfargotunnel\.com)[^\s"'<>]*/i;

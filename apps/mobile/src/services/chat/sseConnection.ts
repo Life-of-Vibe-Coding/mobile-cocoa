@@ -1,16 +1,19 @@
 /**
- * SSE connection utilities: EventSource constructor resolution and retry scheduling.
+ * SSE/WS connection utilities: client construction and retry scheduling.
  *
  * Extracted from useChatStreamingLifecycle to keep the hook focused on React state management.
  * These are pure functions / factory helpers with no React dependencies.
  *
- * Uses POST-based SSE when in Cloudflare mode (Quick Tunnel buffers GET-based SSE).
+ * Cloudflare mode uses WebSocket. Cloudflare tunnels natively proxy WebSocket
+ * without any HTTP/2 buffering issues, eliminating the need for SSE workarounds.
+ *
+ * Direct mode uses standard EventSource (GET-based SSE).
  */
 import EventSource from "react-native-sse";
 import { isCloudflareMode } from "@/services/server/config";
 import type { EventSourceCtor, EventSourceLike, SseMessageEvent } from "./hooksTypes";
-import { createFetchSseClient } from "./sseFetchClient";
-import { resolveStreamUrl, resolveStreamUrlPost } from "./sseMessageProcessor";
+import { resolveStreamUrl } from "./sseMessageProcessor";
+import { createWsClient, resolveWsStreamUrl } from "./wsConnection";
 
 export const SSE_MAX_RETRIES = 5;
 const SSE_RETRY_BASE_MS = 1000;
@@ -22,31 +25,25 @@ export function resolveEventSourceCtor(): EventSourceCtor {
 }
 
 /**
- * Create an SSE client (EventSource or fetch-based POST).
- * Uses POST when in Cloudflare mode to avoid Quick Tunnel buffering.
+ * Create a streaming client appropriate for the current connection mode.
+ *
+ * - Cloudflare: WebSocket (native tunnel support, no buffering)
+ * - Direct: standard EventSource with GET
  */
 export function createSseClient(
   serverUrl: string,
   sessionId: string,
   skipReplayForSession: string | null
 ): { source: EventSourceLike; applySkipReplay: boolean } {
-  const cfMode = isCloudflareMode();
-  // #region agent log
-  console.log("[DBG-099c89] createSseClient", { cfMode, serverUrl: serverUrl.substring(0, 50) });
-  // #endregion
-  if (cfMode) {
-    const { url, body, applySkipReplay } = resolveStreamUrlPost(serverUrl, sessionId, skipReplayForSession);
-    // #region agent log
-    console.log("[DBG-099c89] Using POST fetch SSE client", { url: url.substring(0, 80) });
-    // #endregion
-    return { source: createFetchSseClient({ url, body }), applySkipReplay };
+  if (isCloudflareMode()) {
+    const { url, applySkipReplay } = resolveWsStreamUrl(serverUrl, sessionId, skipReplayForSession);
+    const source = createWsClient({ url });
+    return { source, applySkipReplay };
   }
-  // #region agent log
-  console.log("[DBG-099c89] Using GET EventSource SSE client");
-  // #endregion
-  const { url, applySkipReplay } = resolveStreamUrl(serverUrl, sessionId, skipReplayForSession);
+
   const Ctor = resolveEventSourceCtor();
-  return { source: new Ctor(url), applySkipReplay };
+  const { url, applySkipReplay } = resolveStreamUrl(serverUrl, sessionId, skipReplayForSession);
+  return { source: new Ctor(url, { pollingInterval: 0 }), applySkipReplay };
 }
 
 export type SseEventHandlers = {

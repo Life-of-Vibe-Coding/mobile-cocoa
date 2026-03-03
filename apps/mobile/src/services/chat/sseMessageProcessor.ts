@@ -178,7 +178,8 @@ export function resolveStreamUrl(
 
 /**
  * Resolve the SSE stream URL and body for POST-based streaming.
- * Used for Cloudflare Quick Tunnel (GET buffers SSE until connection close).
+ * Legacy: previously used for Cloudflare Quick Tunnel; Cloudflare mode now uses WebSocket.
+ * Retained for backward compatibility.
  */
 export function resolveStreamUrlPost(
   serverUrl: string,

@@ -14,6 +14,7 @@ import {
 } from "./config/index.js";
 import { shutdown } from "./process/index.js";
 import { setupRoutes } from "./routes/index.js";
+import { attachSessionWebSocket } from "./routes/sessionWsHandler.js";
 import { getActiveOverlay, getPreviewHost } from "./utils/index.js";
 
 const app = express();
@@ -23,10 +24,23 @@ const httpServer = createServer(app);
 // Setup Express routes
 await setupRoutes(app);
 
-// Handle process signals
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGHUP", () => shutdown("SIGHUP"));
+// Attach WebSocket server for session streaming (used by Cloudflare tunnel clients)
+attachSessionWebSocket(httpServer);
+
+// Graceful shutdown: drain connections before exit
+process.on("SIGINT", () => shutdown("SIGINT", httpServer));
+process.on("SIGTERM", () => shutdown("SIGTERM", httpServer));
+process.on("SIGHUP", () => shutdown("SIGHUP", httpServer));
+
+// Crash handlers: log and exit rather than silently dying
+process.on("uncaughtException", (err) => {
+  console.error("[server] Uncaught exception:", err);
+  shutdown("uncaughtException", httpServer);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[server] Unhandled rejection:", reason);
+});
 
 httpServer.listen(PORT, SERVER_LISTEN_HOST, () => {
   const overlay = getActiveOverlay();

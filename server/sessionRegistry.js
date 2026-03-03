@@ -9,7 +9,8 @@ const SESSION_ID_MIGRATION_PREFIX = "_";
  * {
  *   id: string,
  *   processManager: { processRunning, handleSubmitPrompt, handleInput, handleTerminate, cleanup },
- *   subscribers: Set<Response>,
+ *   subscribers: Set<Response>,       // SSE HTTP responses
+ *   wsSubscribers: Set<WebSocket>,    // WebSocket connections
  *   provider: string,
  *   model: string,
  *   sessionLogTimestamp: string,
@@ -26,6 +27,7 @@ function createSessionRecord(sessionId, provider, model, options = {}) {
     id: sessionId,
     originalId: sessionId,
     subscribers: new Set(),
+    wsSubscribers: new Set(),
     provider,
     model,
     sessionLogTimestamp,
@@ -50,6 +52,13 @@ function closeSessionSubscribers(session) {
     } catch (_) { }
   }
   session.subscribers.clear();
+
+  for (const ws of session.wsSubscribers) {
+    try {
+      ws.close();
+    } catch (_) { }
+  }
+  session.wsSubscribers.clear();
 }
 
 /**
@@ -123,6 +132,16 @@ export function subscribeToSession(sessionId, res) {
     session.subscribers.add(res);
     res.on("close", () => {
       session.subscribers.delete(res);
+    });
+  }
+}
+
+export function subscribeWsToSession(sessionId, ws) {
+  const session = resolveSession(sessionId);
+  if (session) {
+    session.wsSubscribers.add(ws);
+    ws.on("close", () => {
+      session.wsSubscribers.delete(ws);
     });
   }
 }

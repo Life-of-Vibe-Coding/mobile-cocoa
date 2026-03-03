@@ -269,6 +269,7 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
       activeSessionId,
       skipReplayForSessionRef.current
     );
+
     if (applySkipReplay) {
       skipReplayForSessionRef.current = null;
     }
@@ -366,9 +367,6 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
       retryCountRef.current = 0;
       clearRetryTimeout();
       if (__DEV__) console.log("[sse] connected", { sessionId: connectionSessionIdRef.current });
-      // #region agent log
-      console.log("[DBG-099c89] SSE open", { ts: Date.now(), sessionId: connectionSessionIdRef.current });
-      // #endregion
       setConnected(true);
     };
 
@@ -389,7 +387,6 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
           delayMs: delay,
           sessionId: connectionSessionIdRef.current,
         });
-
       retryTimeoutRef.current = setTimeout(() => {
         retryTimeoutRef.current = null;
         if (isAborted) return;
@@ -416,22 +413,37 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
         eventError?.xhrStatus === 200 &&
         eventError?.xhrState === 4 &&
         (typeof eventError?.message === "string" && eventError.message.toLowerCase().includes("connection abort"));
+      const errMessageLower =
+        typeof eventError?.message === "string" ? eventError.message.toLowerCase() : "";
+      const isCloudflareTunnelUnavailable =
+        eventError?.xhrStatus === 530 ||
+        errMessageLower.includes("cloudflare tunnel error") ||
+        errMessageLower.includes("error 1033");
       if (isExpectedServerClose) {
         if (__DEV__) console.log("[sse] stream ended (server closed)", { sessionId: connectionSessionIdRef.current });
         handleStreamEnd({}, 0);
+        return;
+      }
+      if (isCloudflareTunnelUnavailable) {
+        if (__DEV__) {
+          console.warn("[sse] cloudflare tunnel unavailable (1033/530); stop retries", {
+            sessionId: connectionSessionIdRef.current,
+            xhrStatus: eventError?.xhrStatus ?? null,
+          });
+        }
+        if (displayedSessionIdRef.current === connectionSessionIdRef.current) {
+          setLastSessionTerminated(true);
+          setConnected(false);
+        }
+        closeActiveSse("cloudflare-tunnel-unreachable");
         return;
       }
       if (__DEV__) console.log("[sse] disconnected (error), will retry", { sessionId: connectionSessionIdRef.current, err });
       scheduleRetry();
     };
 
-    let msgCount = 0;
     const messageHandler = (event: SseMessageEvent) => {
       if (event.data == null) return;
-      msgCount++;
-      // #region agent log
-      if (msgCount <= 10 || msgCount % 20 === 0) { console.log("[DBG-099c89] SSE msg", { ts: Date.now(), msgNum: msgCount, dataLen: typeof event.data === "string" ? event.data.length : 0 }); }
-      // #endregion
 
       const dataStr = event.data;
       const dataStrLen = typeof dataStr === "string" ? dataStr.length : 0;
@@ -594,15 +606,9 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
     };
 
     const endHandler = (event: any) => {
-      // #region agent log
-      console.log("[DBG-099c89] SSE end event", { ts: Date.now(), totalMsgs: msgCount });
-      // #endregion
       handleStreamEnd(event, 0);
     };
     const doneHandler = (event: any) => {
-      // #region agent log
-      console.log("[DBG-099c89] SSE done event", { ts: Date.now(), totalMsgs: msgCount });
-      // #endregion
       handleStreamEnd(event ?? {}, 0);
     };
 

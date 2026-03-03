@@ -168,6 +168,13 @@ export function useChatActions(params: UseChatActionsParams) {
           body: requestBody,
         });
         submitStage = "parse-json";
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!response.ok || !contentType.includes("application/json")) {
+          const bodyPreview = await response.text().catch(() => "");
+          throw new Error(
+            `Server returned ${response.status} (${contentType.split(";")[0] || "unknown"}): ${bodyPreview.slice(0, 200)}`
+          );
+        }
         const data = await response.json();
         submitStage = "apply-result";
         if (data.ok && data.sessionId) {

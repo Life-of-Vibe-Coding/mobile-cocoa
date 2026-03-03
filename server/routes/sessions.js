@@ -9,6 +9,7 @@ import {
     SESSIONS_ROOT,
     WORKSPACE_ALLOWED_ROOT,
 } from "../config/index.js";
+import { SSE_KEEPALIVE_INTERVAL_MS } from "../config/constants.js";
 import { formatSessionLogTimestamp } from "../process/index.js";
 import { createSession, removeSession, resolveSession, subscribeToSession } from "../sessionRegistry.js";
 import { isInsideRoot } from "../utils/index.js";
@@ -88,7 +89,9 @@ function createListSessionRecord(record, now, workspaceCwd) {
         model: record.modelId || null,
         waitingForPermission: record.waitingForPermission === true,
         mtime: record.mtimeMs,
-        sseConnected: record.activeSession ? record.activeSession.subscribers?.size > 0 : false,
+        sseConnected: record.activeSession
+            ? (record.activeSession.subscribers?.size > 0 || record.activeSession.wsSubscribers?.size > 0)
+            : false,
         running,
         cwd: resolveSessionCwdForList(record, workspaceCwd),
     };
@@ -300,7 +303,9 @@ export function registerSessionsRoutes(app) {
             const { provider, modelId, cwd } = parseSessionMetadata(filePath);
             const liveSession = activeSession || resolveSession(canonicalSessionId);
             const running = liveSession?.processManager?.processRunning?.() ?? false;
-            const sseConnected = liveSession ? liveSession.subscribers?.size > 0 : false;
+            const sseConnected = liveSession
+                ? (liveSession.subscribers?.size > 0 || liveSession.wsSubscribers?.size > 0)
+                : false;
             // When session is running, registry may have migrated to a different id (e.g. Pi session_id).
             // Return that id so the client connects to the correct stream and does not open a duplicate.
             const activeSessionId = liveSession?.id ?? canonicalSessionId;
@@ -391,6 +396,21 @@ export function registerSessionsRoutes(app) {
         // Disable Nagle's algorithm so each write() is sent immediately (critical for proxy/tunnel path)
         if (req.socket) req.socket.setNoDelay(true);
 
+        // SSE keepalive: send periodic comment lines to prevent Cloudflare/proxies from
+        // killing idle HTTP/2 streams before the AI process produces output.
+        const keepaliveTimer = setInterval(() => {
+            if (!res.writableEnded && !res.destroyed) {
+                res.write(": keepalive\n\n");
+            } else {
+                clearInterval(keepaliveTimer);
+            }
+        }, SSE_KEEPALIVE_INTERVAL_MS);
+
+        // Ensure keepalive stops when connection ends
+        const clearKeepalive = () => clearInterval(keepaliveTimer);
+        res.on("close", clearKeepalive);
+        res.on("finish", clearKeepalive);
+
         if (!session) {
             // Session not in registry (e.g. server restarted). Try to replay history from disk
             // before closing the connection so the client can restore its message history.
@@ -411,53 +431,7 @@ export function registerSessionsRoutes(app) {
             replayHistoryToResponse(filePath, res);
         }
         if (activeOnly && !processRunning) {
-            // Race: mobile connects before Pi emits agent_start. Poll briefly for process to start.
-            const maxWaitMs = SSE_PROCESS_START_WAIT_MS;
-            const pollMs = SSE_PROCESS_START_POLL_MS;
-            const start = Date.now();
-            let done = false;
-            let pollTimer;
-            const isClosed = () =>
-                done ||
-                res.writableEnded ||
-                res.destroyed ||
-                req.aborted ||
-                req.destroyed ||
-                req.socket?.destroyed;
-            const cleanup = () => {
-                if (done) return;
-                done = true;
-                if (pollTimer) clearTimeout(pollTimer);
-                session.subscribers.delete(res);
-            };
-            req.on("close", cleanup);
-            const check = () => {
-                if (isClosed()) {
-                    cleanup();
-                    return;
-                }
-                if (session.processManager.processRunning?.()) {
-                    if (isClosed()) {
-                        cleanup();
-                        return;
-                    }
-                    done = true;
-                    session.subscribers.add(res);
-                    if (process.env.DEBUG_SSE) {
-                        console.log(`[SSE] sessionId=${sessionId} process started after ${Date.now() - start}ms, subscribed`);
-                    }
-                    return;
-                }
-                if (Date.now() - start >= maxWaitMs) {
-                    done = true;
-                    if (pollTimer) clearTimeout(pollTimer);
-                    res.write(`event: end\ndata: {"exitCode": 0}\n\n`);
-                    res.end();
-                    return;
-                }
-                pollTimer = setTimeout(check, pollMs);
-            };
-            pollTimer = setTimeout(check, pollMs);
+            handleSsePolling({ session, sessionId, req, res });
             return;
         }
 
@@ -465,6 +439,11 @@ export function registerSessionsRoutes(app) {
         subscribeToSession(sessionId, res);
         if (process.env.DEBUG_SSE) {
             console.log(`[SSE] subscribed sessionId=${sessionId}, total subscribers=${session.subscribers.size}`);
+        }
+
+        // Replay any buffered events to this late subscriber (fixes race condition)
+        if (session.sseAdapter?.replayBufferedEvents) {
+            session.sseAdapter.replayBufferedEvents(res);
         }
 
         req.on("close", () => {

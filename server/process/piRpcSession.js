@@ -126,8 +126,12 @@ export function createPiRpcSession({
   }
 
   function sendCommand(cmd) {
-    if (!piProcess?.stdin?.writable) return;
+    if (!piProcess?.stdin?.writable) {
+      console.error(`[pi-debug] sendCommand: stdin not writable, dropping:`, JSON.stringify(cmd).slice(0, 100));
+      return;
+    }
     const line = JSON.stringify(cmd) + "\n";
+    console.log(`[pi-debug] sendCommand: ${line.trimEnd().slice(0, 150)}`);
     piProcess.stdin.write(line);
   }
 
@@ -359,6 +363,10 @@ export function createPiRpcSession({
       spawnEnv.PI_CODING_AGENT_DIR = agentDir;
     }
 
+    console.log(`[pi-debug] Spawning: ${PI_CLI_PATH} ${args.join(" ").slice(0, 300)}`);
+    console.log(`[pi-debug] CWD: ${cwd}`);
+    console.log(`[pi-debug] PI_CODING_AGENT_DIR: ${spawnEnv.PI_CODING_AGENT_DIR ?? "(not set)"}`);
+
     const child = spawn(PI_CLI_PATH, args, {
       cwd,
       env: spawnEnv,
@@ -366,10 +374,12 @@ export function createPiRpcSession({
     });
     piProcess = child;
     globalSpawnChildren.add(child);
+    console.log(`[pi-debug] Pi process spawned, PID=${child.pid}`);
 
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", (chunk) => {
       const text = String(chunk ?? "");
+      console.log(`[pi-debug] stdout chunk (${text.length} chars): ${text.slice(0, 200)}`);
       stdoutBuffer += text;
       const lines = stdoutBuffer.split("\n");
       stdoutBuffer = lines.pop() ?? "";
@@ -397,10 +407,12 @@ export function createPiRpcSession({
 
     child.stderr.on("data", (chunk) => {
       const text = String(chunk ?? "");
+      console.error(`[pi-debug] stderr: ${text.slice(0, 500)}`);
       if (text) socket.emit("output", text);
     });
 
     child.on("exit", (code) => {
+      console.log(`[pi-debug] Pi process exited, code=${code}`);
       globalSpawnChildren.delete(child);
       if (piProcess === child) piProcess = null;
       signalTurnComplete(Number.isInteger(code) ? code : 0);

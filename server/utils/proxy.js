@@ -165,34 +165,19 @@ const server = http.createServer((req, res) => {
 
     const isSSE = (proxyRes.headers["content-type"] || "").includes("text/event-stream");
 
-    // #region agent log
-    if (requestUrl.includes('/stream') || isSSE) { fetch('http://127.0.0.1:7858/ingest/d7d38859-3779-4ab0-968f-91cf91a262e5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'099c89'},body:JSON.stringify({sessionId:'099c89',location:'proxy.js:response-check',message:'Proxy response received',data:{isSSE,requestUrl,targetPort,contentType:proxyRes.headers["content-type"]||'MISSING',statusCode:proxyRes.statusCode},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{}); }
-    // #endregion
-
     if (isSSE) {
       // SSE: disable buffering so events flow through immediately
       responseHeaders["x-accel-buffering"] = "no";
       responseHeaders["cache-control"] = "no-cache";
-      // #region agent log
-      fetch('http://127.0.0.1:7858/ingest/d7d38859-3779-4ab0-968f-91cf91a262e5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'099c89'},body:JSON.stringify({sessionId:'099c89',location:'proxy.js:sse-detect',message:'SSE response detected',data:{targetPort,contentType:proxyRes.headers["content-type"],transferEncoding:proxyRes.headers["transfer-encoding"]||'none',upstreamHeaders:Object.keys(proxyRes.headers)},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       res.writeHead(proxyRes.statusCode, responseHeaders);
       // Disable Nagle's algorithm on all involved sockets for instant forwarding
       if (res.socket) res.socket.setNoDelay(true);
       if (proxyRes.socket) proxyRes.socket.setNoDelay(true);
       if (proxyReq.socket) proxyReq.socket.setNoDelay(true);
-      let sseChunkCount = 0;
       proxyRes.on("data", (chunk) => {
-        sseChunkCount++;
-        const writeOk = res.write(chunk);
-        // #region agent log
-        if (sseChunkCount <= 5 || sseChunkCount % 50 === 0) { console.log(`[proxy][DBG-099c89] chunk #${sseChunkCount} len=${chunk.length} writeOk=${writeOk} t=${Date.now()}`); }
-        // #endregion
+        res.write(chunk);
       });
       proxyRes.on("end", () => {
-        // #region agent log
-        console.log(`[proxy][DBG-099c89] SSE upstream ended, totalChunks=${sseChunkCount} t=${Date.now()}`);
-        // #endregion
         res.end();
       });
     } else {
@@ -302,10 +287,6 @@ server.listen(PROXY_PORT, BIND_HOST, () => {
   console.log(`[proxy] Listening on ${BIND_HOST}:${PROXY_PORT}`);
   console.log(`[proxy] Default target: ${PROXY_LOOPBACK_HOST}:${DEFAULT_TARGET_PORT}`);
   console.log(`[proxy] Allowed ports: ${[...allowedPorts].sort((a, b) => a - b).join(", ")}`);
-  // #region agent log
-  console.log(`[proxy][DBG-099c89] Instrumented proxy started`);
-  fetch('http://127.0.0.1:7858/ingest/d7d38859-3779-4ab0-968f-91cf91a262e5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'099c89'},body:JSON.stringify({sessionId:'099c89',location:'proxy.js:startup',message:'Proxy started with instrumentation',data:{proxyPort:PROXY_PORT,bindHost:BIND_HOST},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   console.log(`[proxy] Watching ${PORTS_CONFIG_PATH} for whitelist changes`);
 });
 

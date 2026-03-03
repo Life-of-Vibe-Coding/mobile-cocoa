@@ -267,6 +267,29 @@ export function replayHistoryToResponse(filePath, res) {
 }
 
 /**
+ * Replay session history from a JSONL file to a WebSocket connection.
+ * Same filtering/slimming logic as replayHistoryToResponse but sends JSON frames.
+ * @returns {number} Number of lines replayed
+ */
+export function replayHistoryToWs(filePath, ws) {
+    if (!filePath || !fs.existsSync(filePath)) return 0;
+    try {
+        const jsonlText = fs.readFileSync(filePath, "utf-8");
+        const lines = jsonlText.split("\n").filter((lineText) => lineText.trim());
+        for (const line of lines) {
+            if (/\"type\"\s*:\s*\"agent_(end|start)\"/.test(line)) continue;
+            if (ws.readyState !== ws.OPEN) break;
+            const slimmed = slimReplayLine(line);
+            ws.send(JSON.stringify({ event: "message", data: slimmed }));
+        }
+        return lines.length;
+    } catch (error) {
+        console.error("[sessions] Failed to replay history to WS:", error?.message);
+        return 0;
+    }
+}
+
+/**
  * Parse a session JSONL file into an array of {id, role, content} message objects.
  * Handles streaming deltas (Codex/Claude), thinking blocks, deduplication, and flush.
  * @param {string} filePath - Absolute path to the .jsonl session file
