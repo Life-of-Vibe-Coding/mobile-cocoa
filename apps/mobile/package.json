@@ -58,10 +58,11 @@
     "preset": "jest-expo",
     "setupFilesAfterEnv": [],
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^tailwindcss/resolveConfig$": "<rootDir>/__mocks__/tailwindcss/resolveConfig.js"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg|react-native-safe-area-context|@gluestack-ui/.*)"
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg|react-native-safe-area-context|@gluestack-ui/.*|uniwind)"
     ],
     "testMatch": [
       "**/__tests__/**/*.test.[jt]s?(x)"

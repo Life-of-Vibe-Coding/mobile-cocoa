@@ -49,7 +49,7 @@ export function ChatPageShell({
           keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         >
           <Box className="flex-1 flex-col px-6 pt-0">
-            <Box className="relative flex-1 min-h-0" style={{ overflow: "hidden" }}>
+            <Box className="relative flex-1 min-h-0">
               <Box className="flex-1 min-h-0" style={{ overflow: "hidden" }}>
                 {!isAnyOverlayOpen && (
                   <ChatHeaderSection

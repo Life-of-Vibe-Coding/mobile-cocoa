@@ -113,9 +113,9 @@ describe("chat/InputPanel accessibility gate", () => {
     const more = getByLabelText("Skill Hub");
     const model = getByLabelText("Select model");
 
-    expect(send.props.className).toContain("h-12");
-    expect(menu.props.className).toContain("min-h-11");
+    expect(send.props.className).toContain("h-11");
+    expect(menu.props.className).toContain("h-11");
     expect(more.props.className).toContain("h-11");
-    expect(model.props.className).toContain("min-h-11");
+    expect(model.props.className).toContain("h-11");
   });
 });

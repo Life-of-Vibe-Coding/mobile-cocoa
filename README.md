@@ -99,6 +99,22 @@ This starts **three things** simultaneously:
 
 ---
 
+## 📖 Tutorial Guides
+
+New to Mobile Cocoa? Follow these step-by-step tutorials in order to go from zero to vibe-coding on your phone:
+
+| # | Guide | Description |
+|---|-------|-------------|
+| 1 | [Pi Setup Guide](quick_start/1.pi_setup_guide.md) | Install and authenticate **Pi**, the CLI agent that connects to LLM providers. |
+| 2 | [Connect to Mobile](quick_start/2.connect_to_mobile_guide.md) | Start the server, launch the Cloudflare tunnel, and scan the QR code to connect your phone. |
+| 3 | [Start Your First Mobile App](quick_start/3.start_your_first_mobile_app.md) | Select a skill, write a prompt, and watch the AI scaffold a full-stack project — all from your phone. |
+| 4 | [Preview Project Frontend](quick_start/4.preview_project_frontend.md) | Render and preview your app's frontend in Mobile Cocoa's built-in browser. |
+| 5 | [Session Management & Workspace Selection](quick_start/5.session_management_workspace_selection.md) | Manage parallel coding sessions and switch between project workspaces. |
+
+> **Tip:** Each guide builds on the previous one. Start with **Pi Setup** and work your way through to get the full experience.
+
+---
+
 ### 📚 Documentation References
 
 For deeper architectural insights, see the `docs/` folder:
