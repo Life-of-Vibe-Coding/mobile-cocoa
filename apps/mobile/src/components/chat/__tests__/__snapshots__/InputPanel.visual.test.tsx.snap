@@ -3,7 +3,7 @@
 exports[`chat/InputPanel visual regression matches snapshot in idle state 1`] = `
 <View>
   <View
-    className="flex-col gap-3 py-3 px-4 mt-6"
+    className="flex-col gap-3 px-4 mt-6 py-3"
     onLayout={[Function]}
     style={
       {
@@ -15,7 +15,7 @@ exports[`chat/InputPanel visual regression matches snapshot in idle state 1`] = 
       className="flex-row items-start gap-3 min-h-11"
     >
       <View
-        className="border border-background-300 rounded overflow-hidden flex-1 min-h-10 h-auto min-w-0 w-full"
+        className="border-background-300 rounded overflow-hidden flex-1 min-h-10 h-auto min-w-0 w-full border-0"
         style={
           {
             "backgroundColor": "transparent",
@@ -31,7 +31,7 @@ exports[`chat/InputPanel visual regression matches snapshot in idle state 1`] = 
           autoComplete="off"
           autoCorrect={true}
           blurOnSubmit={false}
-          className="p-2 w-full min-w-0 text-base py-2 min-h-6 flex-none"
+          className="p-2 w-full min-w-0 text-base py-0 mt-0 mb-0 min-h-6 flex-none"
           editable={true}
           maxLength={8000}
           multiline={true}
@@ -47,10 +47,13 @@ exports[`chat/InputPanel visual regression matches snapshot in idle state 1`] = 
           style={
             {
               "color": "#0F172A",
+              "lineHeight": 24,
               "maxHeight": 96,
               "minHeight": 32,
               "minWidth": 0,
               "overflow": "hidden",
+              "paddingBottom": 8,
+              "paddingTop": 8,
               "width": "100%",
             }
           }
@@ -63,237 +66,350 @@ exports[`chat/InputPanel visual regression matches snapshot in idle state 1`] = 
       />
     </View>
     <View
-      className="w-full flex-row items-center justify-between gap-2 flex-nowrap mt-1"
+      className="w-full flex-row items-center justify-between mt-1"
     >
       <View
-        accessibilityLabel="Skill Hub"
-        accessibilityState={
-          {
-            "busy": undefined,
-            "checked": undefined,
-            "disabled": false,
-            "expanded": false,
-            "selected": undefined,
-          }
-        }
-        accessibilityValue={
-          {
-            "max": undefined,
-            "min": undefined,
-            "now": undefined,
-            "text": undefined,
-          }
-        }
-        accessible={true}
-        aria-haspopup={true}
-        className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 items-center justify-center p-2 rounded-full w-11 h-11 active:opacity-90"
-        collapsable={false}
-        dataSet={
-          {
-            "active": "false",
-            "disabled": "false",
-            "focus": "false",
-            "focusVisible": "false",
-            "hover": "false",
-          }
-        }
-        focusable={true}
-        hitSlop={
-          {
-            "bottom": 12,
-            "left": 12,
-            "right": 12,
-            "top": 12,
-          }
-        }
-        onBlur={[Function]}
-        onClick={[Function]}
-        onFocus={[Function]}
-        onLayout={[Function]}
-        onResponderGrant={[Function]}
-        onResponderMove={[Function]}
-        onResponderRelease={[Function]}
-        onResponderTerminate={[Function]}
-        onResponderTerminationRequest={[Function]}
-        onStartShouldSetResponder={[Function]}
-        states={
-          {
-            "active": false,
-            "disabled": false,
-            "focus": false,
-            "focusVisible": false,
-            "hover": false,
-          }
-        }
-        style={
-          {
-            "backgroundColor": "rgba(224, 242, 255, 0.6)",
-            "borderColor": "#E2E8F0",
-            "borderWidth": 1,
-          }
-        }
+        className="flex-row items-center gap-2"
       >
-        <View />
-      </View>
-      <View
-        accessibilityLabel="Select model"
-        accessibilityState={
-          {
-            "busy": undefined,
-            "checked": undefined,
-            "disabled": false,
-            "expanded": undefined,
-            "selected": undefined,
-          }
-        }
-        accessibilityValue={
-          {
-            "max": undefined,
-            "min": undefined,
-            "now": undefined,
-            "text": undefined,
-          }
-        }
-        accessible={true}
-        className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 flex-1 flex-row items-center gap-0.5 py-0.5 px-2 rounded-full min-h-11 min-w-0 max-w-36 justify-start active:opacity-90"
-        collapsable={false}
-        dataSet={
-          {
-            "active": "false",
-            "disabled": "false",
-            "focus": "false",
-            "focusVisible": "false",
-            "hover": "false",
-          }
-        }
-        focusable={true}
-        hitSlop={
-          {
-            "bottom": 12,
-            "left": 12,
-            "right": 12,
-            "top": 12,
-          }
-        }
-        onBlur={[Function]}
-        onClick={[Function]}
-        onFocus={[Function]}
-        onResponderGrant={[Function]}
-        onResponderMove={[Function]}
-        onResponderRelease={[Function]}
-        onResponderTerminate={[Function]}
-        onResponderTerminationRequest={[Function]}
-        onStartShouldSetResponder={[Function]}
-        states={
-          {
-            "active": false,
-            "disabled": false,
-            "focus": false,
-            "focusVisible": false,
-            "hover": false,
-          }
-        }
-        style={
-          {
-            "backgroundColor": "rgba(224, 242, 255, 0.6)",
-            "borderColor": "#E2E8F0",
-            "borderWidth": 1,
-          }
-        }
-      >
-        <Text
-          className="text-typography-900 text-sm font-bold flex-1 min-w-0"
-          ellipsizeMode="tail"
-          numberOfLines={2}
-          style={
-            [
-              undefined,
-              {
-                "color": "#0F172A",
-              },
-            ]
-          }
-        >
-          gpt-5.1-codex-mini
-        </Text>
         <View
-          className="shrink-0 self-center pl-1"
+          accessibilityLabel="Skill Hub"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": false,
+              "expanded": false,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          aria-haspopup={true}
+          className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 items-center justify-center p-2 rounded-full w-11 h-11 active:opacity-90"
+          collapsable={false}
+          dataSet={
+            {
+              "active": "false",
+              "disabled": "false",
+              "focus": "false",
+              "focusVisible": "false",
+              "hover": "false",
+            }
+          }
+          focusable={true}
+          hitSlop={
+            {
+              "bottom": 12,
+              "left": 12,
+              "right": 12,
+              "top": 12,
+            }
+          }
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          states={
+            {
+              "active": false,
+              "disabled": false,
+              "focus": false,
+              "focusVisible": false,
+              "hover": false,
+            }
+          }
+          style={
+            {
+              "backgroundColor": "rgba(15, 23, 42, 0.04)",
+              "borderColor": "rgba(15, 23, 42, 0.1)",
+              "borderWidth": 1,
+            }
+          }
         >
           <View />
         </View>
-      </View>
-      <View
-        accessibilityLabel="System menu"
-        accessibilityState={
-          {
-            "busy": undefined,
-            "checked": undefined,
-            "disabled": false,
-            "expanded": undefined,
-            "selected": undefined,
+        <View
+          className="flex-shrink-1"
+          collapsable={false}
+          jestAnimatedProps={
+            {
+              "value": {},
+            }
           }
-        }
-        accessibilityValue={
-          {
-            "max": undefined,
-            "min": undefined,
-            "now": undefined,
-            "text": undefined,
-          }
-        }
-        accessible={true}
-        className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 flex-row items-center justify-center gap-1 px-3 rounded-full min-h-11 active:opacity-80"
-        collapsable={false}
-        dataSet={
-          {
-            "active": "false",
-            "disabled": "false",
-            "focus": "false",
-            "focusVisible": "false",
-            "hover": "false",
-          }
-        }
-        focusable={true}
-        onBlur={[Function]}
-        onClick={[Function]}
-        onFocus={[Function]}
-        onLayout={[Function]}
-        onResponderGrant={[Function]}
-        onResponderMove={[Function]}
-        onResponderRelease={[Function]}
-        onResponderTerminate={[Function]}
-        onResponderTerminationRequest={[Function]}
-        onStartShouldSetResponder={[Function]}
-        states={
-          {
-            "active": false,
-            "disabled": false,
-            "focus": false,
-            "focusVisible": false,
-            "hover": false,
-          }
-        }
-        style={
-          {
-            "backgroundColor": "rgba(224, 242, 255, 0.6)",
-            "borderColor": "#E2E8F0",
-            "borderWidth": 1,
-          }
-        }
-      >
-        <View />
-        <View />
-      </View>
-      <View
-        collapsable={false}
-        style={
-          {
-            "transform": [
-              {
-                "scale": 1,
+          jestAnimatedStyle={
+            {
+              "value": {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
               },
-            ],
+            }
           }
+          jestInlineStyle={
+            [
+              undefined,
+            ]
+          }
+          nativeID="0"
+          style={
+            [
+              {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
+              },
+              undefined,
+            ]
+          }
+        >
+          <View
+            accessibilityLabel="Select model"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 flex-row items-center gap-1.5 px-3 rounded-full h-11 min-w-11 max-w-40 justify-center active:opacity-90"
+            collapsable={false}
+            dataSet={
+              {
+                "active": "false",
+                "disabled": "false",
+                "focus": "false",
+                "focusVisible": "false",
+                "hover": "false",
+              }
+            }
+            focusable={true}
+            hitSlop={
+              {
+                "bottom": 12,
+                "left": 12,
+                "right": 12,
+                "top": 12,
+              }
+            }
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            states={
+              {
+                "active": false,
+                "disabled": false,
+                "focus": false,
+                "focusVisible": false,
+                "hover": false,
+              }
+            }
+            style={
+              {
+                "backgroundColor": "rgba(241, 245, 249, 0.7)",
+                "borderColor": "rgba(148, 163, 184, 0.2)",
+                "borderWidth": 1,
+              }
+            }
+          >
+            <Text
+              className="text-typography-900 text-sm font-bold flex-shrink"
+              ellipsizeMode="tail"
+              numberOfLines={1}
+              style={
+                [
+                  undefined,
+                  {
+                    "color": "#0F172A",
+                  },
+                ]
+              }
+            >
+              gpt-5.1-codex-mini
+            </Text>
+            <View
+              className="shrink-0 flex-row items-center justify-center"
+            >
+              <View />
+            </View>
+          </View>
+        </View>
+        <View
+          collapsable={false}
+          jestAnimatedProps={
+            {
+              "value": {},
+            }
+          }
+          jestAnimatedStyle={
+            {
+              "value": {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
+              },
+            }
+          }
+          jestInlineStyle={
+            [
+              undefined,
+            ]
+          }
+          nativeID="1"
+          style={
+            [
+              {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
+              },
+              undefined,
+            ]
+          }
+        >
+          <View
+            accessibilityLabel="System menu"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": false,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            aria-haspopup={true}
+            className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 flex-row items-center justify-center gap-1.5 px-3 rounded-full h-11 min-w-11 active:opacity-90 transition-all"
+            collapsable={false}
+            dataSet={
+              {
+                "active": "false",
+                "disabled": "false",
+                "focus": "false",
+                "focusVisible": "false",
+                "hover": "false",
+              }
+            }
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            states={
+              {
+                "active": false,
+                "disabled": false,
+                "focus": false,
+                "focusVisible": false,
+                "hover": false,
+              }
+            }
+            style={
+              {
+                "backgroundColor": "rgba(15, 23, 42, 0.05)",
+                "borderColor": "rgba(15, 23, 42, 0.12)",
+                "borderWidth": 1.5,
+              }
+            }
+          >
+            <View />
+            <View
+              style={
+                {
+                  "opacity": 0.7,
+                  "transform": [
+                    {
+                      "rotate": "180deg",
+                    },
+                  ],
+                }
+              }
+            >
+              <View />
+            </View>
+          </View>
+        </View>
+      </View>
+      <View
+        collapsable={false}
+        jestAnimatedProps={
+          {
+            "value": {},
+          }
+        }
+        jestAnimatedStyle={
+          {
+            "value": {
+              "transform": [
+                {
+                  "scale": 1,
+                },
+              ],
+            },
+          }
+        }
+        jestInlineStyle={{}}
+        nativeID="2"
+        style={
+          [
+            {
+              "transform": [
+                {
+                  "scale": 1,
+                },
+              ],
+            },
+          ]
         }
       >
         <View
@@ -316,7 +432,7 @@ exports[`chat/InputPanel visual regression matches snapshot in idle state 1`] = 
             }
           }
           accessible={true}
-          className="group/button flex-row items-center justify-center gap-2 px-5 bg-primary-500 w-12 h-12 rounded-full active:opacity-80"
+          className="group/button flex-row gap-2 bg-primary-500 w-11 h-11 rounded-full items-center justify-center active:opacity-80 p-0 m-0"
           collapsable={false}
           focusable={true}
           onBlur={[Function]}
@@ -330,15 +446,15 @@ exports[`chat/InputPanel visual regression matches snapshot in idle state 1`] = 
           onStartShouldSetResponder={[Function]}
           style={
             {
-              "backgroundColor": "#0F172A",
+              "backgroundColor": "#60a5fa",
               "borderColor": "transparent",
               "borderWidth": 0,
-              "shadowColor": "#0F172A",
+              "shadowColor": "#60a5fa",
               "shadowOffset": {
                 "height": 4,
                 "width": 0,
               },
-              "shadowOpacity": 0.3,
+              "shadowOpacity": 0.4,
               "shadowRadius": 8,
             }
           }
@@ -362,7 +478,7 @@ exports[`chat/InputPanel visual regression matches snapshot in idle state 1`] = 
 exports[`chat/InputPanel visual regression matches snapshot in waiting-for-user-input state 1`] = `
 <View>
   <View
-    className="flex-col gap-3 py-3 px-4 mt-6"
+    className="flex-col gap-3 px-4 mt-6 py-3"
     onLayout={[Function]}
     style={
       {
@@ -374,7 +490,7 @@ exports[`chat/InputPanel visual regression matches snapshot in waiting-for-user-
       className="flex-row items-start gap-3 min-h-11"
     >
       <View
-        className="border border-background-300 rounded overflow-hidden flex-1 min-h-10 h-auto min-w-0 w-full"
+        className="border-background-300 rounded overflow-hidden flex-1 min-h-10 h-auto min-w-0 w-full border-0"
         style={
           {
             "backgroundColor": "transparent",
@@ -390,7 +506,7 @@ exports[`chat/InputPanel visual regression matches snapshot in waiting-for-user-
           autoComplete="off"
           autoCorrect={true}
           blurOnSubmit={false}
-          className="p-2 w-full min-w-0 text-base py-2 min-h-6 flex-none"
+          className="p-2 w-full min-w-0 text-base py-0 mt-0 mb-0 min-h-6 flex-none"
           editable={true}
           maxLength={8000}
           multiline={true}
@@ -406,10 +522,13 @@ exports[`chat/InputPanel visual regression matches snapshot in waiting-for-user-
           style={
             {
               "color": "#0F172A",
+              "lineHeight": 24,
               "maxHeight": 96,
               "minHeight": 32,
               "minWidth": 0,
               "overflow": "hidden",
+              "paddingBottom": 8,
+              "paddingTop": 8,
               "width": "100%",
             }
           }
@@ -422,295 +541,441 @@ exports[`chat/InputPanel visual regression matches snapshot in waiting-for-user-
       />
     </View>
     <View
-      className="w-full flex-row items-center justify-between gap-2 flex-nowrap mt-1"
+      className="w-full flex-row items-center justify-between mt-1"
     >
       <View
-        accessibilityLabel="Skill Hub"
-        accessibilityState={
-          {
-            "busy": undefined,
-            "checked": undefined,
-            "disabled": false,
-            "expanded": false,
-            "selected": undefined,
-          }
-        }
-        accessibilityValue={
-          {
-            "max": undefined,
-            "min": undefined,
-            "now": undefined,
-            "text": undefined,
-          }
-        }
-        accessible={true}
-        aria-haspopup={true}
-        className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 items-center justify-center p-2 rounded-full w-11 h-11 active:opacity-90"
-        collapsable={false}
-        dataSet={
-          {
-            "active": "false",
-            "disabled": "false",
-            "focus": "false",
-            "focusVisible": "false",
-            "hover": "false",
-          }
-        }
-        focusable={true}
-        hitSlop={
-          {
-            "bottom": 12,
-            "left": 12,
-            "right": 12,
-            "top": 12,
-          }
-        }
-        onBlur={[Function]}
-        onClick={[Function]}
-        onFocus={[Function]}
-        onLayout={[Function]}
-        onResponderGrant={[Function]}
-        onResponderMove={[Function]}
-        onResponderRelease={[Function]}
-        onResponderTerminate={[Function]}
-        onResponderTerminationRequest={[Function]}
-        onStartShouldSetResponder={[Function]}
-        states={
-          {
-            "active": false,
-            "disabled": false,
-            "focus": false,
-            "focusVisible": false,
-            "hover": false,
-          }
-        }
-        style={
-          {
-            "backgroundColor": "rgba(224, 242, 255, 0.6)",
-            "borderColor": "#E2E8F0",
-            "borderWidth": 1,
-          }
-        }
+        className="flex-row items-center gap-2"
       >
-        <View />
-      </View>
-      <View
-        accessibilityLabel="Select model"
-        accessibilityState={
-          {
-            "busy": undefined,
-            "checked": undefined,
-            "disabled": false,
-            "expanded": undefined,
-            "selected": undefined,
+        <View
+          accessibilityLabel="Skill Hub"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": false,
+              "expanded": false,
+              "selected": undefined,
+            }
           }
-        }
-        accessibilityValue={
-          {
-            "max": undefined,
-            "min": undefined,
-            "now": undefined,
-            "text": undefined,
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
           }
-        }
-        accessible={true}
-        className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 flex-1 flex-row items-center gap-0.5 py-0.5 px-2 rounded-full min-h-11 min-w-0 max-w-36 justify-start active:opacity-90"
-        collapsable={false}
-        dataSet={
-          {
-            "active": "false",
-            "disabled": "false",
-            "focus": "false",
-            "focusVisible": "false",
-            "hover": "false",
+          accessible={true}
+          aria-haspopup={true}
+          className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 items-center justify-center p-2 rounded-full w-11 h-11 active:opacity-90"
+          collapsable={false}
+          dataSet={
+            {
+              "active": "false",
+              "disabled": "false",
+              "focus": "false",
+              "focusVisible": "false",
+              "hover": "false",
+            }
           }
-        }
-        focusable={true}
-        hitSlop={
-          {
-            "bottom": 12,
-            "left": 12,
-            "right": 12,
-            "top": 12,
+          focusable={true}
+          hitSlop={
+            {
+              "bottom": 12,
+              "left": 12,
+              "right": 12,
+              "top": 12,
+            }
           }
-        }
-        onBlur={[Function]}
-        onClick={[Function]}
-        onFocus={[Function]}
-        onResponderGrant={[Function]}
-        onResponderMove={[Function]}
-        onResponderRelease={[Function]}
-        onResponderTerminate={[Function]}
-        onResponderTerminationRequest={[Function]}
-        onStartShouldSetResponder={[Function]}
-        states={
-          {
-            "active": false,
-            "disabled": false,
-            "focus": false,
-            "focusVisible": false,
-            "hover": false,
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          states={
+            {
+              "active": false,
+              "disabled": false,
+              "focus": false,
+              "focusVisible": false,
+              "hover": false,
+            }
           }
-        }
-        style={
-          {
-            "backgroundColor": "rgba(224, 242, 255, 0.6)",
-            "borderColor": "#E2E8F0",
-            "borderWidth": 1,
-          }
-        }
-      >
-        <Text
-          className="text-typography-900 text-sm font-bold flex-1 min-w-0"
-          ellipsizeMode="tail"
-          numberOfLines={2}
           style={
+            {
+              "backgroundColor": "rgba(15, 23, 42, 0.04)",
+              "borderColor": "rgba(15, 23, 42, 0.1)",
+              "borderWidth": 1,
+            }
+          }
+        >
+          <View />
+        </View>
+        <View
+          className="flex-shrink-1"
+          collapsable={false}
+          jestAnimatedProps={
+            {
+              "value": {},
+            }
+          }
+          jestAnimatedStyle={
+            {
+              "value": {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
+              },
+            }
+          }
+          jestInlineStyle={
             [
               undefined,
+            ]
+          }
+          nativeID="3"
+          style={
+            [
               {
-                "color": "#0F172A",
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
+              },
+              undefined,
+            ]
+          }
+        >
+          <View
+            accessibilityLabel="Select model"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 flex-row items-center gap-1.5 px-3 rounded-full h-11 min-w-11 max-w-40 justify-center active:opacity-90"
+            collapsable={false}
+            dataSet={
+              {
+                "active": "false",
+                "disabled": "false",
+                "focus": "false",
+                "focusVisible": "false",
+                "hover": "false",
+              }
+            }
+            focusable={true}
+            hitSlop={
+              {
+                "bottom": 12,
+                "left": 12,
+                "right": 12,
+                "top": 12,
+              }
+            }
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            states={
+              {
+                "active": false,
+                "disabled": false,
+                "focus": false,
+                "focusVisible": false,
+                "hover": false,
+              }
+            }
+            style={
+              {
+                "backgroundColor": "rgba(241, 245, 249, 0.7)",
+                "borderColor": "rgba(148, 163, 184, 0.2)",
+                "borderWidth": 1,
+              }
+            }
+          >
+            <Text
+              className="text-typography-900 text-sm font-bold flex-shrink"
+              ellipsizeMode="tail"
+              numberOfLines={1}
+              style={
+                [
+                  undefined,
+                  {
+                    "color": "#0F172A",
+                  },
+                ]
+              }
+            >
+              gpt-5.1-codex-mini
+            </Text>
+            <View
+              className="shrink-0 flex-row items-center justify-center"
+            >
+              <View />
+            </View>
+          </View>
+        </View>
+        <View
+          collapsable={false}
+          jestAnimatedProps={
+            {
+              "value": {},
+            }
+          }
+          jestAnimatedStyle={
+            {
+              "value": {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
+              },
+            }
+          }
+          jestInlineStyle={
+            [
+              undefined,
+            ]
+          }
+          nativeID="4"
+          style={
+            [
+              {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
+              },
+              undefined,
+            ]
+          }
+        >
+          <View
+            accessibilityLabel="System menu"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": false,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            aria-haspopup={true}
+            className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 flex-row items-center justify-center gap-1.5 px-3 rounded-full h-11 min-w-11 active:opacity-90 transition-all"
+            collapsable={false}
+            dataSet={
+              {
+                "active": "false",
+                "disabled": "false",
+                "focus": "false",
+                "focusVisible": "false",
+                "hover": "false",
+              }
+            }
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            states={
+              {
+                "active": false,
+                "disabled": false,
+                "focus": false,
+                "focusVisible": false,
+                "hover": false,
+              }
+            }
+            style={
+              {
+                "backgroundColor": "rgba(15, 23, 42, 0.05)",
+                "borderColor": "rgba(15, 23, 42, 0.12)",
+                "borderWidth": 1.5,
+              }
+            }
+          >
+            <View />
+            <View
+              style={
+                {
+                  "opacity": 0.7,
+                  "transform": [
+                    {
+                      "rotate": "180deg",
+                    },
+                  ],
+                }
+              }
+            >
+              <View />
+            </View>
+          </View>
+        </View>
+        <View
+          collapsable={false}
+          jestAnimatedProps={
+            {
+              "value": {},
+            }
+          }
+          jestAnimatedStyle={
+            {
+              "value": {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
+              },
+            }
+          }
+          jestInlineStyle={{}}
+          nativeID="5"
+          style={
+            [
+              {
+                "transform": [
+                  {
+                    "scale": 1,
+                  },
+                ],
               },
             ]
           }
         >
-          gpt-5.1-codex-mini
-        </Text>
-        <View
-          className="shrink-0 self-center pl-1"
-        >
-          <View />
-        </View>
-      </View>
-      <View
-        accessibilityLabel="System menu"
-        accessibilityState={
-          {
-            "busy": undefined,
-            "checked": undefined,
-            "disabled": false,
-            "expanded": undefined,
-            "selected": undefined,
-          }
-        }
-        accessibilityValue={
-          {
-            "max": undefined,
-            "min": undefined,
-            "now": undefined,
-            "text": undefined,
-          }
-        }
-        accessible={true}
-        className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 flex-row items-center justify-center gap-1 px-3 rounded-full min-h-11 active:opacity-80"
-        collapsable={false}
-        dataSet={
-          {
-            "active": "false",
-            "disabled": "false",
-            "focus": "false",
-            "focusVisible": "false",
-            "hover": "false",
-          }
-        }
-        focusable={true}
-        onBlur={[Function]}
-        onClick={[Function]}
-        onFocus={[Function]}
-        onLayout={[Function]}
-        onResponderGrant={[Function]}
-        onResponderMove={[Function]}
-        onResponderRelease={[Function]}
-        onResponderTerminate={[Function]}
-        onResponderTerminationRequest={[Function]}
-        onStartShouldSetResponder={[Function]}
-        states={
-          {
-            "active": false,
-            "disabled": false,
-            "focus": false,
-            "focusVisible": false,
-            "hover": false,
-          }
-        }
-        style={
-          {
-            "backgroundColor": "rgba(224, 242, 255, 0.6)",
-            "borderColor": "#E2E8F0",
-            "borderWidth": 1,
-          }
-        }
-      >
-        <View />
-        <View />
-      </View>
-      <View
-        accessibilityLabel="Terminate agent response"
-        accessibilityRole="button"
-        accessibilityState={
-          {
-            "busy": undefined,
-            "checked": undefined,
-            "disabled": false,
-            "expanded": undefined,
-            "selected": undefined,
-          }
-        }
-        accessibilityValue={
-          {
-            "max": undefined,
-            "min": undefined,
-            "now": undefined,
-            "text": undefined,
-          }
-        }
-        accessible={true}
-        className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 min-h-11 px-3 border items-center justify-center bg-error-500 border-error-500 active:bg-error-600 w-11 h-11 rounded-xl"
-        collapsable={false}
-        dataSet={
-          {
-            "active": "false",
-            "disabled": "false",
-            "focus": "false",
-            "focusVisible": "false",
-            "hover": "false",
-          }
-        }
-        focusable={true}
-        onBlur={[Function]}
-        onClick={[Function]}
-        onFocus={[Function]}
-        onResponderGrant={[Function]}
-        onResponderMove={[Function]}
-        onResponderRelease={[Function]}
-        onResponderTerminate={[Function]}
-        onResponderTerminationRequest={[Function]}
-        onStartShouldSetResponder={[Function]}
-        states={
-          {
-            "active": false,
-            "disabled": false,
-            "focus": false,
-            "focusVisible": false,
-            "hover": false,
-          }
-        }
-      >
-        <View
-          className="flex-row gap-1 items-center"
-        >
-          <View />
-        </View>
-      </View>
-      <View
-        collapsable={false}
-        style={
-          {
-            "transform": [
+          <View
+            accessibilityLabel="Terminate agent response"
+            accessibilityRole="button"
+            accessibilityState={
               {
-                "scale": 1,
-              },
-            ],
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            className="data-[focus-visible=true]:outline-none data-[focus-visible=true]:ring-indicator-info data-[focus-visible=true]:ring-2 data-[disabled=true]:opacity-40 min-h-11 border items-center justify-center bg-error-500 border-error-500 active:bg-error-600 w-11 h-11 rounded-full px-0"
+            collapsable={false}
+            dataSet={
+              {
+                "active": "false",
+                "disabled": "false",
+                "focus": "false",
+                "focusVisible": "false",
+                "hover": "false",
+              }
+            }
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            states={
+              {
+                "active": false,
+                "disabled": false,
+                "focus": false,
+                "focusVisible": false,
+                "hover": false,
+              }
+            }
+          >
+            <View
+              className="flex-row gap-1 items-center"
+            >
+              <View />
+            </View>
+          </View>
+        </View>
+      </View>
+      <View
+        collapsable={false}
+        jestAnimatedProps={
+          {
+            "value": {},
           }
+        }
+        jestAnimatedStyle={
+          {
+            "value": {
+              "transform": [
+                {
+                  "scale": 1,
+                },
+              ],
+            },
+          }
+        }
+        jestInlineStyle={{}}
+        nativeID="6"
+        style={
+          [
+            {
+              "transform": [
+                {
+                  "scale": 1,
+                },
+              ],
+            },
+          ]
         }
       >
         <View
@@ -733,7 +998,7 @@ exports[`chat/InputPanel visual regression matches snapshot in waiting-for-user-
             }
           }
           accessible={true}
-          className="group/button flex-row items-center justify-center gap-2 px-5 bg-primary-500 w-12 h-12 rounded-full active:opacity-80"
+          className="group/button flex-row gap-2 bg-primary-500 w-11 h-11 rounded-full items-center justify-center active:opacity-80 p-0 m-0"
           collapsable={false}
           focusable={true}
           onBlur={[Function]}
@@ -747,15 +1012,15 @@ exports[`chat/InputPanel visual regression matches snapshot in waiting-for-user-
           onStartShouldSetResponder={[Function]}
           style={
             {
-              "backgroundColor": "#0F172A",
+              "backgroundColor": "#60a5fa",
               "borderColor": "transparent",
               "borderWidth": 0,
-              "shadowColor": "#0F172A",
+              "shadowColor": "#60a5fa",
               "shadowOffset": {
                 "height": 4,
                 "width": 0,
               },
-              "shadowOpacity": 0.3,
+              "shadowOpacity": 0.4,
               "shadowRadius": 8,
             }
           }
