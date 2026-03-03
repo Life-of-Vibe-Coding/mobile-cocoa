@@ -154,72 +154,95 @@ function startMobileFrontend(apiTunnelUrl) {
   // Start the Metro cloudflared tunnel FIRST so we get the public URL
   // before Expo starts. EXPO_PACKAGER_PROXY_URL makes Metro generate
   // correct public URLs in its manifest instead of localhost:8081.
-  console.log(`\n${DIM}[mobile] Starting Metro Cloudflare tunnel...${RESET}\n`);
+  // Retries with backoff if Cloudflare rate-limits (429 Too Many Requests).
+  const METRO_TUNNEL_MAX_RETRIES = 5;
+  const METRO_TUNNEL_BASE_DELAY = 10_000; // 10s initial wait on rate limit
+  let metroTunnelAttempt = 0;
 
-  const metroTunnel = spawn("cloudflared", [
-    "tunnel", "--no-autoupdate", "--config", "/dev/null",
-    "--url", "http://localhost:8081",
-  ], {
-    stdio: ["pipe", "pipe", "pipe"],
-    cwd: ROOT,
-    env: process.env,
-    detached: false,
-  });
-  metroTunnel.on("error", (err) => console.error("[metro-tunnel] error:", err.message));
-  metroTunnel.on("exit", (code) => {
-    if (code !== 0 && code != null) console.error("[metro-tunnel] exited with", code);
-  });
-  children.push(metroTunnel);
+  function startMetroTunnel() {
+    metroTunnelAttempt++;
+    if (metroTunnelAttempt > 1) {
+      const delay = METRO_TUNNEL_BASE_DELAY * Math.pow(2, metroTunnelAttempt - 2);
+      console.log(`${DIM}[metro-tunnel] Retry ${metroTunnelAttempt}/${METRO_TUNNEL_MAX_RETRIES} in ${delay / 1000}s...${RESET}`);
+    } else {
+      console.log(`\n${DIM}[mobile] Starting Metro Cloudflare tunnel...${RESET}\n`);
+    }
 
-  let metroUrlFound = false;
-
-  function onMetroTunnelUrl(metroTunnelUrl) {
-    if (metroUrlFound) return;
-    metroUrlFound = true;
-    const metroPublicUrl = metroTunnelUrl.replace(/[)\],'"\s]+$/, "").trim();
-
-    // Print connection info banner
-    const hBar = "━".repeat(56);
-    console.log("");
-    console.log(`${BOLD}${CYAN}┏${hBar}┓${RESET}`);
-    console.log(`${BOLD}${CYAN}┃${GREEN}${BOLD}  📱  Mobile App — Ready!                                ${CYAN}┃${RESET}`);
-    console.log(`${BOLD}${CYAN}┣${hBar}┫${RESET}`);
-    console.log(`${BOLD}${CYAN}┃${RESET}${WHITE}  Open Expo Go on your phone and tap "Enter URL manually" ${BOLD}${CYAN}┃${RESET}`);
-    console.log(`${BOLD}${CYAN}┃${RESET}${WHITE}  then paste the URL below:                               ${BOLD}${CYAN}┃${RESET}`);
-    console.log(`${BOLD}${CYAN}┗${hBar}┛${RESET}`);
-    console.log("");
-    console.log(`  ${BOLD}${YELLOW}${metroPublicUrl}${RESET}`);
-    console.log("");
-    console.log(`${DIM}  QR code (for quick copy — scan with any QR reader):${RESET}`);
-    qrcode.generate(metroPublicUrl, { small: true }, (code) => {
-      console.log(code);
+    const metroTunnel = spawn("cloudflared", [
+      "tunnel", "--no-autoupdate", "--config", "/dev/null",
+      "--url", "http://localhost:8081",
+    ], {
+      stdio: ["pipe", "pipe", "pipe"],
+      cwd: ROOT,
+      env: process.env,
+      detached: false,
     });
-
-    // Start Expo with EXPO_PACKAGER_PROXY_URL so Metro's manifest
-    // uses the cloudflare tunnel URL (not localhost:8081)
-    run("mobile", npm, ["run", "-w", "mobile", "start"], {
-      inherit: true,
-      fatal: false,
-      env: {
-        ...process.env,
-        EXPO_PUBLIC_SERVER_URL: apiTunnelUrl,
-        EXPO_PUBLIC_CONNECTION_MODE: "cloudflare",
-        EXPO_PACKAGER_PROXY_URL: metroPublicUrl,
-      },
+    metroTunnel.on("error", (err) => console.error("[metro-tunnel] error:", err.message));
+    metroTunnel.on("exit", (code) => {
+      if (code !== 0 && code != null) {
+        console.error(`[metro-tunnel] exited with ${code}`);
+        if (metroTunnelAttempt < METRO_TUNNEL_MAX_RETRIES) {
+          const delay = METRO_TUNNEL_BASE_DELAY * Math.pow(2, metroTunnelAttempt - 1);
+          setTimeout(startMetroTunnel, delay);
+        } else {
+          console.error(`${BOLD}\x1b[31m[metro-tunnel] Max retries exceeded. Metro tunnel unavailable.${RESET}`);
+        }
+      }
     });
+    children.push(metroTunnel);
+
+    let metroUrlFound = false;
+
+    function onMetroTunnelUrl(metroTunnelUrl) {
+      if (metroUrlFound) return;
+      metroUrlFound = true;
+      const metroPublicUrl = metroTunnelUrl.replace(/[)\],'"\s]+$/, "").trim();
+
+      // Print connection info banner
+      const hBar = "━".repeat(56);
+      console.log("");
+      console.log(`${BOLD}${CYAN}┏${hBar}┓${RESET}`);
+      console.log(`${BOLD}${CYAN}┃${GREEN}${BOLD}  📱  Mobile App — Ready!                                ${CYAN}┃${RESET}`);
+      console.log(`${BOLD}${CYAN}┣${hBar}┫${RESET}`);
+      console.log(`${BOLD}${CYAN}┃${RESET}${WHITE}  Open Expo Go on your phone and tap "Enter URL manually" ${BOLD}${CYAN}┃${RESET}`);
+      console.log(`${BOLD}${CYAN}┃${RESET}${WHITE}  then paste the URL below:                               ${BOLD}${CYAN}┃${RESET}`);
+      console.log(`${BOLD}${CYAN}┗${hBar}┛${RESET}`);
+      console.log("");
+      console.log(`  ${BOLD}${YELLOW}${metroPublicUrl}${RESET}`);
+      console.log("");
+      console.log(`${DIM}  QR code (for quick copy — scan with any QR reader):${RESET}`);
+      qrcode.generate(metroPublicUrl, { small: true }, (code) => {
+        console.log(code);
+      });
+
+      // Start Expo with EXPO_PACKAGER_PROXY_URL so Metro's manifest
+      // uses the cloudflare tunnel URL (not localhost:8081)
+      run("mobile", npm, ["run", "-w", "mobile", "start"], {
+        inherit: true,
+        fatal: false,
+        env: {
+          ...process.env,
+          EXPO_PUBLIC_SERVER_URL: apiTunnelUrl,
+          EXPO_PUBLIC_CONNECTION_MODE: "cloudflare",
+          EXPO_PACKAGER_PROXY_URL: metroPublicUrl,
+        },
+      });
+    }
+
+    const handleMetroOutput = (chunk) => {
+      const line = String(chunk);
+      process.stderr.write(`[metro-tunnel] ${line}`);
+      const match = line.match(urlRegex);
+      if (match) onMetroTunnelUrl(match[0]);
+    };
+
+    metroTunnel.stdout.setEncoding("utf8");
+    metroTunnel.stderr.setEncoding("utf8");
+    metroTunnel.stdout.on("data", handleMetroOutput);
+    metroTunnel.stderr.on("data", handleMetroOutput);
   }
 
-  const handleMetroOutput = (chunk) => {
-    const line = String(chunk);
-    process.stderr.write(`[metro-tunnel] ${line}`);
-    const match = line.match(urlRegex);
-    if (match) onMetroTunnelUrl(match[0]);
-  };
-
-  metroTunnel.stdout.setEncoding("utf8");
-  metroTunnel.stderr.setEncoding("utf8");
-  metroTunnel.stdout.on("data", handleMetroOutput);
-  metroTunnel.stderr.on("data", handleMetroOutput);
+  startMetroTunnel();
 }
 
 function printExpoCommand(url) {
