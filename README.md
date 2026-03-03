@@ -28,31 +28,30 @@ Tired of blind coding? Mobile Cocoa supports built-in browser previews, allowing
 Safety and consistency are paramount. Mobile Cocoa executes commands, sandboxes applications, and tests code within Docker containers. This means your local host environment is kept clean and safe, while providing a versatile and standardized Linux environment for the AI to work its magic.
 
 ## 2. Start Up Guide
-Getting started with Mobile Cocoa is simple. The architecture is split between a Node.js backend server and an Expo mobile application.
+Getting started with Mobile Cocoa is a four-step process.
 
-### Prerequisites
-- Node.js & npm/yarn installed
-- Docker (optional, for secure sandboxed execution)
-- Expo Go app on your phone (or an iOS/Android simulator)
+### Step 1 — Clone the Repository & Install Dependencies
+```bash
+git clone https://github.com/your-org/mobile-cocoa.git
+cd mobile-cocoa
+npm install
+```
 
-### Step 1 — Install [Pi](https://github.com/badlogic/pi-mono) (CLI Agent Backend)
+### Step 2 — Install [Pi](https://github.com/badlogic/pi-mono) (CLI Agent Backend)
 
-Mobile Cocoa uses **Pi** (`@mariozechner/pi-coding-agent`) as the underlying CLI agent that connects to LLM providers. Pi is a minimal AI coding harness that equips LLMs with `read`, `write`, `edit`, and `bash` tools for terminal-based coding tasks. The server runs Pi in `--mode rpc` (headless JSON-RPC) to programmatically control it.
+Mobile Cocoa uses **Pi** (`@mariozechner/pi-coding-agent`) as the underlying CLI agent that connects to LLM providers. Pi is a minimal AI coding harness that equips LLMs with `read`, `write`, `edit`, and `bash` tools for terminal-based coding tasks.
 
 **Install Pi globally:**
 ```bash
 npm install -g @mariozechner/pi-coding-agent
 ```
 
-This makes the `pi` command available system-wide.
-
 **Authenticate with one or more providers** — run `pi` and follow the interactive prompts:
-
 ```bash
 pi
 ```
 
-Pi stores credentials in `~/.pi/agent/auth.json` (or `<workspace>/.pi/agent/auth.json`).
+Pi stores credentials in `~/.pi/agent/auth.json`. Mobile Cocoa automatically routes each request to the correct provider based on the model selected in the app — configured in `config/pi.json`.
 
 | Pi CLI Provider | What it covers |
 |---|---|
@@ -62,85 +61,47 @@ Pi stores credentials in `~/.pi/agent/auth.json` (or `<workspace>/.pi/agent/auth
 | `openai-codex` | Codex models (`gpt-5.3-codex`, `gpt-5.1-codex-mini`, etc.) |
 | `openai` | Standard GPT models (`gpt-4o`, etc.) |
 
-Mobile Cocoa automatically routes each request to the correct Pi provider based on the model selected in the app — this routing is configured in `config/pi.json` and requires no code changes.
+### Step 3 — Create a Workspace to Play In
 
-### Step 2 — Configure the Server
-Mobile Cocoa uses **JSON config files** instead of `.env` files. All configuration lives in the `config/` folder:
+Create a dedicated directory where the AI agent can read, write, and experiment freely. Initialize it as a Git repo so you can track and revert any changes.
 
-1. **Copy the example config:**
-   ```bash
-   cp config/server.example.json config/server.json
-   ```
-2. **Edit `config/server.json`** to customize your setup:
-   ```json
-   {
-     "port": 3456,
-     "defaultProvider": "gemini",
-     "enableDockerManager": false,
-     "funnelServerUrl": "http://YOUR_HOST:3456"
-   }
-   ```
-   - `port` — the port the backend server runs on.
-   - `defaultProvider` — which LLM provider to use by default (`"claude"`, `"gemini"`, or `"codex"`).
-   - `enableDockerManager` — set to `true` to enable Docker sandboxing.
-   - `funnelServerUrl` — set this to your machine's LAN IP or tunnel URL so the mobile app can reach the server.
-
-You can also fine-tune the agent's behavior via `config/pi.json` (provider routing, default models, system prompts) and add/remove models in `config/models.json` — changes take effect without a restart.
-
-### Step 3 — Install Dependencies
 ```bash
-npm install
+mkdir cocoa_workspace
+cd cocoa_workspace
+git init
 ```
 
-### Step 4 — Start the Backend Server
-This powers the session registry, AI routing, Docker execution, and file system operations.
+> **Tip:** Think of `cocoa_workspace` as your sandbox — a safe playground where you and the AI can vibe-code, scaffold projects, and have fun without touching anything important.
+
+### Step 4 — Install Cloudflare Tunnel
 ```bash
-npm run dev
+brew install cloudflared
 ```
 
-### Step 5 — Start the Mobile Application
-In a separate terminal, launch the Expo dev server for the mobile client:
+For non-macOS platforms, see the [Cloudflare docs](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/).
+
+### Step 5 — Start in Cloudflare Mode
+Run everything with one command:
 ```bash
-npm run dev:mobile
+npm run dev:cloudflare
+```
+This starts **three things** simultaneously:
+- The proxy server (port 9443)
+- The backend dev server (port 3456, with auto-restart)
+- A Cloudflare quick tunnel
+
+**Wait for the tunnel URL** — after a few seconds you'll see a highlighted box in your terminal:
+```
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🚀  EXPO TUNNEL COMMAND — Ready!                       ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ Copy & run the command below in another terminal:      ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  EXPO_PUBLIC_SERVER_URL=https://xxx.trycloudflare.com npm run dev:mobile:cloudflare
 ```
 
-### Step 6 — Connect
-- Scan the QR code generated by Expo with your phone's camera (iOS) or the Expo Go app (Android).
-- Press **i** to open in an iOS Simulator, **a** for Android Emulator, or **r** to hard-reload.
-
-> **Tip:** For local development, your phone and dev machine must be on the same Wi-Fi network. For remote access, see the Cloudflare tunnel method below.
-
-### Cloudflare Tunnel (Remote Access)
-To access Mobile Cocoa from outside your local network (e.g., when your phone is on cellular data), you can use Cloudflare Tunnel to expose your local server over a secure public URL.
-
-**Prerequisites:**
-- Install `cloudflared` — `brew install cloudflared` (macOS) or see [Cloudflare docs](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/) for other platforms.
-
-**Steps:**
-
-1. **Start everything with one command:**
-   ```bash
-   npm run dev:cloudflare
-   ```
-   This starts **three things** simultaneously:
-   - The proxy server (port 9443)
-   - The backend dev server (port 3456, with auto-restart)
-   - A Cloudflare quick tunnel
-
-2. **Wait for the tunnel URL** — after a few seconds you'll see a highlighted box in your terminal:
-   ```
-   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-   ┃ 🚀  EXPO TUNNEL COMMAND — Ready!                       ┃
-   ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-   ┃ Copy & run the command below in another terminal:      ┃
-   ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-     EXPO_PUBLIC_SERVER_URL=https://xxx.trycloudflare.com npm run dev:mobile:cloudflare
-   ```
-
-3. **Copy and run the printed command** in a separate terminal. The full command is printed on its own line below the box for easy copying.
-
-4. **Scan the QR code** on your phone — your app will now connect through the secure Cloudflare tunnel.
+**Copy and run the printed command** in a separate terminal, then **scan the QR code** on your phone — your app will now connect through the secure Cloudflare tunnel.
 
 > **Note:** Quick tunnels are free and require no Cloudflare account, but they have no uptime guarantee. A new URL is generated each time you start the tunnel.
 

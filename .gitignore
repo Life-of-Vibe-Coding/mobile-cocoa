@@ -40,10 +40,13 @@ Thumbs.db
 !.github/
 !.vscode/
 
-# Auto-generated skill symlinks
-skills_enabled/
+# Auto-generated skill symlinks (enabled skills for the server)
+server/skills/enabled/*
 
 # Optional
 .cache/
 coverage/
 .nyc_output/
+
+# User sandbox workspace (created by users for local AI coding sessions)
+cocoa_workspace/

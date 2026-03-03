@@ -234,16 +234,19 @@ function resolveWorkspaceCwd() {
     }
   }
 
-  const raw = fromCli ?? process.env.WORKSPACE ?? process.env.WORKSPACE_CWD ?? projectRoot;
+  // Default workspace: cocoa_workspace/ alongside the project root
+  const defaultWorkspace = path.join(projectRoot, "..", "cocoa_workspace");
+
+  const raw = fromCli ?? process.env.WORKSPACE ?? process.env.WORKSPACE_CWD ?? defaultWorkspace;
   const resolved = path.resolve(raw);
 
   if (!fs.existsSync(resolved)) {
-    console.warn(`[workspace] Path does not exist: ${resolved}. Using server directory.`);
+    console.warn(`[workspace] Path does not exist: ${resolved}. Falling back to project root.`);
     return projectRoot;
   }
   const stat = fs.statSync(resolved);
   if (!stat.isDirectory()) {
-    console.warn(`[workspace] Not a directory: ${resolved}. Using server directory.`);
+    console.warn(`[workspace] Not a directory: ${resolved}. Falling back to project root.`);
     return projectRoot;
   }
   return resolved;
