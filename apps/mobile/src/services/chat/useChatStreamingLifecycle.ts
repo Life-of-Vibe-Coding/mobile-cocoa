@@ -1,5 +1,6 @@
 import { createEventDispatcher } from "@/services/providers/eventDispatcher";
 import { isProviderStream, stripAnsi } from "@/services/providers/stream";
+import { e2eFetch } from "@/services/server/e2eFetch";
 import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import type {
@@ -139,7 +140,7 @@ export function useChatStreamingLifecycle(params: UseChatStreamingLifecycleParam
         return;
       }
       try {
-        const response = await fetch(`${serverUrl}/api/sessions/${encodeURIComponent(sessionIdToRefresh)}/messages`);
+        const response = await e2eFetch(`${serverUrl}/api/sessions/${encodeURIComponent(sessionIdToRefresh)}/messages`);
         if (!response.ok) return;
         const data = await response.json();
         const loadedMessages = Array.isArray(data?.messages) ? (data.messages as Message[]) : [];

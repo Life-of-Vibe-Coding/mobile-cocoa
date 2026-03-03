@@ -16,9 +16,15 @@ import { shutdown } from "./process/index.js";
 import { setupRoutes } from "./routes/index.js";
 import { attachSessionWebSocket } from "./routes/sessionWsHandler.js";
 import { getActiveOverlay, getPreviewHost } from "./utils/index.js";
+import { e2eMiddleware } from "./routes/e2eMiddleware.js";
 
 const app = express();
 app.use(express.json());
+
+// Application-layer E2E encryption (transparent to route handlers).
+// Enabled when config/e2e.json contains a passphrase; otherwise no-op.
+app.use(e2eMiddleware);
+
 const httpServer = createServer(app);
 
 // Setup Express routes

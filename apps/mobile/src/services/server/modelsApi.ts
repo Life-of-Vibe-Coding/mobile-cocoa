@@ -6,6 +6,7 @@
  */
 import type { Provider } from "@/theme/index";
 import { getDefaultServerConfig } from "./config";
+import { e2eFetch } from "./e2eFetch";
 
 export type ModelOption = { value: string; label: string };
 
@@ -60,7 +61,7 @@ const FETCH_BASE_DELAY_MS = 1500;
 async function fetchWithRetry(url: string, retries: number): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const response = await fetch(url);
+      const response = await e2eFetch(url);
       if (response.ok) return response;
       if (response.status >= 500 || response.status === 404) {
         if (attempt < retries) {
@@ -81,7 +82,7 @@ async function fetchWithRetry(url: string, retries: number): Promise<Response> {
       throw err;
     }
   }
-  return fetch(url);
+  return e2eFetch(url);
 }
 
 /**

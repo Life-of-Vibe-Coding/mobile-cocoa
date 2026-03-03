@@ -7,6 +7,7 @@ import type {
     PermissionDenial
 } from "@/core/types";
 import { getAllowedToolsFromDenials } from "@/services/providers/stream";
+import { e2eFetch } from "@/services/server/e2eFetch";
 import { useSessionManagementStore } from "@/state/sessionManagementStore";
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import { normalizeSubmitPayload, stableStringify } from "./hooksSerialization";
@@ -162,7 +163,7 @@ export function useChatActions(params: UseChatActionsParams) {
           console.log("[sse] submit prompt body length", requestBody.length);
         }
         submitStage = "fetch";
-        const response = await fetch(`${serverUrl}/api/sessions`, {
+        const response = await e2eFetch(`${serverUrl}/api/sessions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: requestBody,
@@ -233,7 +234,7 @@ export function useChatActions(params: UseChatActionsParams) {
       if (!sessionId || !pendingAskQuestion) return;
 
       try {
-        await fetch(`${serverUrl}/api/sessions/${sessionId}/input`, {
+        await e2eFetch(`${serverUrl}/api/sessions/${sessionId}/input`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: { content: [{ type: "tool_result", content: JSON.stringify(answers) }] } }),
@@ -253,7 +254,7 @@ export function useChatActions(params: UseChatActionsParams) {
       if (!sessionId || !pendingAskQuestion) return;
 
       try {
-        await fetch(`${serverUrl}/api/sessions/${sessionId}/input`, {
+        await e2eFetch(`${serverUrl}/api/sessions/${sessionId}/input`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ approved: Boolean(approved) }),
@@ -297,7 +298,7 @@ export function useChatActions(params: UseChatActionsParams) {
             sessionId,
           })
         );
-        const response = await fetch(`${serverUrl}/api/sessions`, {
+        const response = await e2eFetch(`${serverUrl}/api/sessions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: requestBody,
@@ -348,7 +349,7 @@ export function useChatActions(params: UseChatActionsParams) {
     setLastSessionTerminated(true);
     if (!sessionId) return;
     try {
-      await fetch(`${serverUrl}/api/sessions/${sessionId}/terminate`, {
+      await e2eFetch(`${serverUrl}/api/sessions/${sessionId}/terminate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -362,7 +363,7 @@ export function useChatActions(params: UseChatActionsParams) {
   const resetSession = useCallback(async () => {
     if (sessionId) {
       try {
-        await fetch(`${serverUrl}/api/sessions/${sessionId}/terminate`, {
+        await e2eFetch(`${serverUrl}/api/sessions/${sessionId}/terminate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ resetSession: true }),

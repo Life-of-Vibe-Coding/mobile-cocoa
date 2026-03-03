@@ -6,8 +6,10 @@
  * eliminating all SSE workarounds (POST hack, XHR EventSource, keepalive, etc.).
  *
  * Server sends JSON frames: { event: "message"|"end", data: "<string>" }
- * This client parses them and dispatches to the same handlers used by SSE.
+ * When E2E encryption is active, frames are wrapped: { encrypted: "<base64>" }
+ * This client decrypts them before dispatching to handlers.
  */
+import { decryptWsFrame, isE2eEnabled } from "@/services/server/e2eCrypto";
 import type { EventSourceLike } from "./hooksTypes";
 
 type Listener = (...args: unknown[]) => void;
@@ -33,6 +35,8 @@ export function resolveWsStreamUrl(
   const applySkipReplay = skipReplayForSession === sessionId;
   const params = new URLSearchParams({ activeOnly: "1" });
   if (applySkipReplay) params.set("skipReplay", "1");
+  // Signal E2E support so the server encrypts frames for this connection
+  if (isE2eEnabled()) params.set("e2e", "1");
 
   return {
     url: `${wsBase}/ws/sessions/${sessionId}/stream?${params.toString()}`,
@@ -107,17 +111,29 @@ export function createWsClient(options: WsStreamOptions): EventSourceLike {
 
   ws.onmessage = (event: MessageEvent) => {
     if (closed) return;
-    try {
-      const frame = JSON.parse(event.data) as { event: string; data: string };
-      const msgEvent = { data: frame.data, type: frame.event };
 
-      if (frame.event === "end") {
-        emit("end", msgEvent);
-      } else {
-        emit("message", msgEvent);
+    const processFrame = (rawData: string) => {
+      try {
+        const frame = JSON.parse(rawData) as { event: string; data: string };
+        const msgEvent = { data: frame.data, type: frame.event };
+
+        if (frame.event === "end") {
+          emit("end", msgEvent);
+        } else {
+          emit("message", msgEvent);
+        }
+      } catch {
+        emit("message", { data: rawData, type: "message" });
       }
-    } catch {
-      emit("message", { data: event.data, type: "message" });
+    };
+
+    if (isE2eEnabled()) {
+      // Async decrypt, then process
+      decryptWsFrame(event.data)
+        .then(processFrame)
+        .catch(() => processFrame(event.data));
+    } else {
+      processFrame(event.data);
     }
   };
 

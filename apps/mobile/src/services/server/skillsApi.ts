@@ -71,12 +71,14 @@ export type SkillSource = {
   note?: string;
 };
 
+import { e2eFetch } from "./e2eFetch";
+
 export type SkillSourcesResponse = {
   sources: SkillSource[];
 };
 
 async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(url, init);
+  const response = await e2eFetch(url, init);
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = typeof payload?.error === "string" ? payload.error : `HTTP ${response.status}`;

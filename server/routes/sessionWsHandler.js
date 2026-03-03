@@ -7,12 +7,16 @@
  * Message format (server -> client):
  *   { "event": "message", "data": "<raw line>" }
  *   { "event": "end",     "data": "{\"exitCode\":0}" }
+ *
+ * When a client connects with `?e2e=1`, frames are encrypted:
+ *   { "encrypted": "<base64 AES-256-GCM ciphertext>" }
  */
 import fs from "fs";
 import { URL } from "url";
 import { WebSocketServer } from "ws";
 import { SSE_PROCESS_START_POLL_MS, SSE_PROCESS_START_WAIT_MS } from "../config/constants.js";
 import { resolveSession, subscribeWsToSession } from "../sessionRegistry.js";
+import { isE2eEnabled, encrypt } from "../utils/e2eCrypto.js";
 import { isValidSessionId, resolveSessionFilePath, replayHistoryToWs } from "./sessionHelpers.js";
 import { isTempSessionId } from "./sessionSseHandler.js";
 
@@ -45,6 +49,9 @@ export function attachSessionWebSocket(httpServer) {
   wss.on("connection", (ws, req, sessionId, url) => {
     const activeOnly = url.searchParams.get("activeOnly") === "1";
     const skipReplay = url.searchParams.get("skipReplay") === "1";
+
+    // Tag this connection with E2E support if client requested it AND server has a key
+    ws._e2e = url.searchParams.get("e2e") === "1" && isE2eEnabled();
 
     const session = resolveSession(sessionId);
 
@@ -139,11 +146,18 @@ function handleWsPolling({ session, sessionId, ws }) {
 
 /**
  * Send a JSON-framed message over WebSocket.
+ * Only encrypts if this specific connection opted in via `?e2e=1`.
  */
 export function wsSend(ws, event, data) {
   if (ws.readyState !== ws.OPEN) return;
   try {
     const dataStr = typeof data === "string" ? data : JSON.stringify(data);
-    ws.send(JSON.stringify({ event, data: dataStr }));
+    const frame = JSON.stringify({ event, data: dataStr });
+    if (ws._e2e) {
+      ws.send(JSON.stringify({ encrypted: encrypt(frame) }));
+    } else {
+      ws.send(frame);
+    }
   } catch { /* swallow send errors */ }
 }
+

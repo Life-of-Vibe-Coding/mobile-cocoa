@@ -16,6 +16,9 @@ out/
 # Local config overrides (personal/machine-specific settings)
 config/server.json
 
+# E2E encryption passphrase (secret — never commit)
+config/e2e.json
+
 # Logs and debug
 logs/
 *.log

@@ -11,6 +11,7 @@ import {
   projectRoot,
   VALID_PROVIDERS,
 } from "../config/index.js";
+import { isE2eEnabled, encrypt } from "../utils/e2eCrypto.js";
 
 import { createPiRpcSession } from "./piRpcSession.js";
 
@@ -222,15 +223,18 @@ function createSseSocketAdapter(sessionId, session, host = DEFAULT_SSE_HOST) {
      */
     replayBufferedEventsWs(ws) {
       if (eventBuffer.length === 0) return;
+      const useE2e = ws._e2e === true;
       for (const { rawLine, isEnd, rawData } of eventBuffer) {
         try {
           if (ws.readyState !== 1 /* OPEN */) break;
           if (isEnd) {
-            ws.send(JSON.stringify({ event: "end", data: rawData }));
+            const frame = JSON.stringify({ event: "end", data: rawData });
+            ws.send(useE2e ? JSON.stringify({ encrypted: encrypt(frame) }) : frame);
             ws.close();
             break;
           } else {
-            ws.send(JSON.stringify({ event: "message", data: rawLine }));
+            const frame = JSON.stringify({ event: "message", data: rawLine });
+            ws.send(useE2e ? JSON.stringify({ encrypted: encrypt(frame) }) : frame);
           }
         } catch (err) {
           break;
@@ -288,13 +292,20 @@ function createSseSocketAdapter(sessionId, session, host = DEFAULT_SSE_HOST) {
       // Broadcast to WebSocket subscribers
       const wsSubscribers = session.wsSubscribers;
       if (wsSubscribers && wsSubscribers.size > 0) {
-        const wsPayload = isEnd
+        const wsFrame = isEnd
           ? JSON.stringify({ event: "end", data: rawData })
           : JSON.stringify({ event: "message", data: line });
+        // Pre-compute encrypted version only if at least one subscriber needs it
+        let wsFrameEncrypted = null;
         for (const ws of wsSubscribers) {
           try {
             if (ws.readyState !== 1 /* OPEN */) continue;
-            ws.send(wsPayload);
+            if (ws._e2e) {
+              if (!wsFrameEncrypted) wsFrameEncrypted = JSON.stringify({ encrypted: encrypt(wsFrame) });
+              ws.send(wsFrameEncrypted);
+            } else {
+              ws.send(wsFrame);
+            }
             if (isEnd) ws.close();
           } catch (err) {
             // swallow send errors

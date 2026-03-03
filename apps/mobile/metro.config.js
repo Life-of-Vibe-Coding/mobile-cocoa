@@ -28,7 +28,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     };
   }
   // tailwindcss v4 exposes subpaths (e.g. tailwindcss/plugin) only via package.json "exports"
-  const usePackageExports = ["uniwind", "culori", "tailwindcss"].some((prefix) =>
+  const usePackageExports = ["uniwind", "culori", "tailwindcss", "dom-helpers"].some((prefix) =>
     moduleName === prefix || moduleName.startsWith(prefix + "/")
   );
   if (usePackageExports) {
