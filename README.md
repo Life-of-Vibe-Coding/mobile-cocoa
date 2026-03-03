@@ -30,7 +30,7 @@ cd mobile-cocoa
 npm install
 
 # 2. Create a sandbox workspace (safe playground for the AI to read/write)
-mkdir cocoa_workspace && cd cocoa_workspace && git init && cd ..
+mkdir -p cocoa_workspace && cd cocoa_workspace && git init && cd ..
 
 # 3. Install the Cloudflare tunnel (macOS)
 #    For other platforms: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/

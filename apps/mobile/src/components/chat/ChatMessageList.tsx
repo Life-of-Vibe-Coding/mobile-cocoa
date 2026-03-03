@@ -172,7 +172,6 @@ export const ChatMessageList = memo(function ChatMessageList({
           </Text>
           <Text size="md" className="text-typography-500 mb-8 text-center px-4">
             Vibe coding everywhere,{"\n"}
-            logic weaving through the air.
           </Text>
           {workspaceName && (
             <Text size="xs" className="text-typography-400 text-center opacity-70">
