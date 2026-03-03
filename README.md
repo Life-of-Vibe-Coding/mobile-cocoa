@@ -17,7 +17,7 @@ Mobile Cocoa is a mobile-first intelligent coding assistant and development envi
 
 ---
 
-## 2. Start Up Guide
+## 2. Start Up Guide （Macos Only, Windows is under-developement)
 
 ### Step 1 — Quick Start
 
