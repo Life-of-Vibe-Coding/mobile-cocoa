@@ -63,7 +63,41 @@ Pi stores credentials in `~/.pi/agent/auth.json`. Mobile Cocoa automatically rou
 
 ---
 
-### Step 3 — Start in Cloudflare Mode
+### Step 3 — Enable E2E Encryption (Optional but Recommended)
+
+Mobile Cocoa supports **application-layer end-to-end encryption** (AES-256-GCM) to protect all traffic from intermediaries — including the Cloudflare tunnel itself. When enabled, every HTTP request/response and WebSocket frame is encrypted with a pre-shared key before it leaves the device.
+
+Generate a passphrase and write it to `config/e2e.json`:
+
+```bash
+node server/scripts/generate-e2e-key.mjs
+```
+
+You'll see output like:
+
+```
+✅ E2E encryption key generated.
+   Passphrase:  <random-64-char-passphrase>
+
+📱 Enter this passphrase in the mobile app's E2E settings to enable encryption.
+```
+
+**On your phone:** open **Settings → E2E Encryption** in the Mobile Cocoa app and paste the same passphrase. Both sides must share the identical key.
+
+> **Note:** If `config/e2e.json` doesn't exist the system runs in **passthrough mode** — everything still works, just without the extra encryption layer.
+
+Key files:
+
+| File | Purpose |
+|------|---------|
+| `server/utils/e2eCrypto.js` | Core encrypt / decrypt logic (AES-256-GCM, HKDF key derivation) |
+| `server/routes/e2eMiddleware.js` | Server middleware — auto-decrypts requests, encrypts responses |
+| `apps/mobile/src/utils/e2eCrypto.ts` | Mobile-side matching implementation |
+| `config/e2e.json` | Stores the shared passphrase (git-ignored) |
+
+---
+
+### Step 4 — Start in Cloudflare Mode
 
 Run everything with one command:
 
@@ -121,6 +155,7 @@ For deeper architectural insights, see the `docs/` folder:
 
 - `docs/server-session-registry.md` — how AI sessions, streaming states, and the LRU cache are managed.
 - `docs/server-utils.md` — core utilities powering the server infrastructure.
+- `server/utils/e2eCrypto.js` — application-layer E2E encryption (AES-256-GCM) for Cloudflare tunnel security.
 
 ---
 

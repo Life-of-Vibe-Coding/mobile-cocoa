@@ -9,8 +9,8 @@ import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
 import { triggerHaptic } from "@/designSystem";
 import { CATEGORY_COLORS, CATEGORY_COLORS_LIGHT, type Category } from "@/utils/skillColors";
-import React, { useState } from "react";
-import { Dimensions, ScrollView, View as RNView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Dimensions, Keyboard, Platform, ScrollView, View as RNView } from "react-native";
 
 interface SkillHubPopoverProps {
     isDark: boolean;
@@ -46,6 +46,16 @@ export function SkillHubPopover({
     const maxSkillCategoryHeight = 180;
     const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
 
+    // Close skill menu when keyboard appears to prevent position detachment
+    useEffect(() => {
+        if (!skillMenuVisible) return;
+        const keyboardEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+        const sub = Keyboard.addListener(keyboardEvent, () => {
+            setSkillMenuVisible(false);
+        });
+        return () => sub.remove();
+    }, [skillMenuVisible, setSkillMenuVisible]);
+
     return (
         <Popover
             isOpen={skillMenuVisible}
@@ -56,6 +66,10 @@ export function SkillHubPopover({
                     {...triggerProps}
                     onPress={(e) => {
                         triggerHaptic("selection");
+                        // Dismiss keyboard before opening to prevent position mismatch
+                        if (!skillMenuVisible) {
+                            Keyboard.dismiss();
+                        }
                         fetchEnabledSkills();
                         setSkillMenuVisible(!skillMenuVisible);
                         if (triggerProps.onPress) { triggerProps.onPress(e); }
