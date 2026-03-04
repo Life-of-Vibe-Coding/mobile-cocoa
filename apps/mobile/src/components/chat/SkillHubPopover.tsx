@@ -9,7 +9,7 @@ import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
 import { triggerHaptic } from "@/designSystem";
 import { CATEGORY_COLORS, CATEGORY_COLORS_LIGHT, type Category } from "@/utils/skillColors";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dimensions, Keyboard, Platform, ScrollView, View as RNView } from "react-native";
 
 interface SkillHubPopoverProps {
@@ -46,19 +46,30 @@ export function SkillHubPopover({
     const maxSkillCategoryHeight = 180;
     const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
 
-    // Close skill menu when keyboard appears to prevent position detachment
+    // Close skill menu when keyboard shows OR hides to prevent position detachment.
+    // When the keyboard dismisses, the input panel slides down but the popover
+    // would stay pinned at the old elevated position, so we close it.
     useEffect(() => {
         if (!skillMenuVisible) return;
-        const keyboardEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-        const sub = Keyboard.addListener(keyboardEvent, () => {
+        const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+        const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+        const subShow = Keyboard.addListener(showEvent, () => {
             setSkillMenuVisible(false);
         });
-        return () => sub.remove();
+        const subHide = Keyboard.addListener(hideEvent, () => {
+            setSkillMenuVisible(false);
+        });
+        return () => {
+            subShow.remove();
+            subHide.remove();
+        };
     }, [skillMenuVisible, setSkillMenuVisible]);
 
     return (
         <Popover
             isOpen={skillMenuVisible}
+            trapFocus={false}
+            focusScope={false}
             onClose={() => setSkillMenuVisible(false)}
             onOpen={() => setSkillMenuVisible(true)}
             trigger={(triggerProps) => (
@@ -66,10 +77,6 @@ export function SkillHubPopover({
                     {...triggerProps}
                     onPress={(e) => {
                         triggerHaptic("selection");
-                        // Dismiss keyboard before opening to prevent position mismatch
-                        if (!skillMenuVisible) {
-                            Keyboard.dismiss();
-                        }
                         fetchEnabledSkills();
                         setSkillMenuVisible(!skillMenuVisible);
                         if (triggerProps.onPress) { triggerProps.onPress(e); }
@@ -248,6 +255,7 @@ export function SkillHubPopover({
                                 maxHeight: Dimensions.get("window").height * 0.6
                             }}
                             showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="always"
                         >
                             <RNView style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingBottom: 16 }}>
                                 {enabledSkills

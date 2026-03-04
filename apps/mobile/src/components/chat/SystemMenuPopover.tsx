@@ -33,6 +33,8 @@ export function SystemMenuPopover({
     return (
         <Popover
             isOpen={terminalMenuVisible}
+            trapFocus={false}
+            focusScope={false}
             onClose={() => setTerminalMenuVisible(false)}
             onOpen={() => setTerminalMenuVisible(true)}
             placement="top right"
