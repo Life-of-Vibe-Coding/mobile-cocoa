@@ -25,16 +25,19 @@ Clone the repo, install dependencies, create a workspace sandbox, and install th
 
 ```bash
 # 1. Clone & install
-git clone https://github.com/your-org/mobile-cocoa.git
+git clone https://github.com/synvo-ai/mobile-cocoa.git
 cd mobile-cocoa
 npm install
 
 # 2. Create a sandbox workspace (safe playground for the AI to read/write)
-mkdir -p cocoa_workspace && cd cocoa_workspace && git init && cd ..
+#    Note: the workspace must live NEXT TO (not inside) the project folder
+mkdir -p ../cocoa_workspace && cd ../cocoa_workspace && git init && cd -
 
 # 3. Install the Cloudflare tunnel (macOS)
 #    For other platforms: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/
 brew install cloudflared
+# Apple Silicon Mac users: if `cloudflared` is not found after install, add Homebrew to your PATH:
+#   echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 ```
 
 ---
