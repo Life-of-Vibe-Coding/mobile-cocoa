@@ -2,12 +2,62 @@
  * Config and workspace path routes.
  */
 import os from "os";
+import fs from "fs";
+import path from "path";
 import {
   ENABLE_DOCKER_MANAGER, getOverlayNetwork, getWorkspaceCwd,
   loadModelsConfig,
   setWorkspaceCwd, SIDEBAR_REFRESH_INTERVAL_MS, WORKSPACE_ALLOWED_ROOT,
   getCustomSystemPrompt, setCustomSystemPrompt,
 } from "../config/index.js";
+
+/**
+ * Map Pi auth.json keys / env var names to the client-facing provider IDs
+ * used by the mobile app ("claude", "gemini", "codex").
+ */
+const PI_AUTH_KEY_TO_CLIENT_PROVIDER = {
+  anthropic: "claude",
+  "google-gemini-cli": "gemini",
+  "google-antigravity": "gemini",
+  google: "gemini",
+  "openai-codex": "codex",
+  openai: "codex",
+  "github-copilot": "codex",
+};
+
+const ENV_VAR_TO_CLIENT_PROVIDER = {
+  ANTHROPIC_API_KEY: "claude",
+  GEMINI_API_KEY: "gemini",
+  GOOGLE_API_KEY: "gemini",
+  OPENAI_API_KEY: "codex",
+};
+
+/** Preferred order when selecting the default provider. */
+const PROVIDER_PRIORITY = ["claude", "gemini", "codex"];
+
+function getConnectedProviders() {
+  const connected = new Set();
+
+  // 1. Check ~/.pi/agent/auth.json
+  try {
+    const authPath = path.join(os.homedir(), ".pi", "agent", "auth.json");
+    const raw = fs.readFileSync(authPath, "utf8");
+    const auth = JSON.parse(raw);
+    for (const key of Object.keys(auth)) {
+      const clientProvider = PI_AUTH_KEY_TO_CLIENT_PROVIDER[key];
+      if (clientProvider) connected.add(clientProvider);
+    }
+  } catch {
+    // File absent or unreadable — fall through to env vars
+  }
+
+  // 2. Check environment variables
+  for (const [envVar, clientProvider] of Object.entries(ENV_VAR_TO_CLIENT_PROVIDER)) {
+    if (process.env[envVar]) connected.add(clientProvider);
+  }
+
+  return [...connected];
+}
 
 function toMb(value) {
   return typeof value === "number" ? Number((value / (1024 * 1024)).toFixed(1)) : 0;
@@ -19,6 +69,18 @@ export function registerConfigRoutes(app) {
       sidebarRefreshIntervalMs: SIDEBAR_REFRESH_INTERVAL_MS,
       overlayNetwork: getOverlayNetwork(),
     });
+  });
+
+  /**
+   * GET /api/connected-providers
+   * Returns which LLM providers have credentials (auth.json or env vars).
+   * Used by the mobile app to pick a sensible default model on first launch.
+   */
+  app.get("/api/connected-providers", (_, res) => {
+    const connectedProviders = getConnectedProviders();
+    const defaultProvider =
+      PROVIDER_PRIORITY.find((p) => connectedProviders.includes(p)) ?? null;
+    res.json({ connectedProviders, defaultProvider });
   });
 
   /**
