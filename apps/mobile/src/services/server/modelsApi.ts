@@ -129,3 +129,28 @@ export function getModelOptionsForProvider(provider: string): ModelOption[] {
 export function getDefaultModelForProvider(provider: string): string {
   return getModelsConfigSync().providers[provider]?.defaultModel ?? "";
 }
+
+// ── Connected-providers API ───────────────────────────────────────────────────
+
+export type ConnectedProvidersResponse = {
+  connectedProviders: string[];
+  defaultProvider: string | null;
+};
+
+/**
+ * Ask the server which LLM providers have credentials configured.
+ * Used on first launch (no stored preference) to pick a sensible default.
+ * Returns null on any error so callers can fall back gracefully.
+ */
+export async function fetchConnectedProviders(): Promise<ConnectedProvidersResponse | null> {
+  try {
+    const baseUrl = getDefaultServerConfig().getBaseUrl();
+    const response = await e2eFetch(`${baseUrl}/api/connected-providers`);
+    if (!response.ok) return null;
+    const data = (await response.json()) as ConnectedProvidersResponse;
+    if (!Array.isArray(data?.connectedProviders)) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}

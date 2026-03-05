@@ -65,6 +65,7 @@ export function buildChatPageProps({
       onOpenExplorer: openSidebar,
       sidebarVisible,
     },
+    noProviderConnected: sseState.noProviderConnected,
     conversation: {
       messages: sseState.messages,
       provider: themeState.provider,

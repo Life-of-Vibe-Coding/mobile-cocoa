@@ -5,6 +5,7 @@ import { type Provider } from "@/core/modelOptions";
 import { triggerHaptic } from "@/designSystem";
 import { getModel, ModalSessionItem } from "@/features/app/appConfig";
 import { useChat, type Message, type PendingAskUserQuestion, type PermissionDenial } from "@/services/chat/hooks";
+import { fetchConnectedProviders } from "@/services/server/modelsApi";
 import * as sessionStore from "@/services/sessionStore";
 import { useSessionManagementStore, type SessionStatus } from "@/state/sessionManagementStore";
 
@@ -48,6 +49,7 @@ export type SseSessionControllerState = {
   storeProvider: string | null;
   storeModel: string | null;
   storeSessionId: string | null;
+  noProviderConnected: boolean;
   handleModelChange: (model: string) => void;
   handleProviderChange: (provider: Provider) => void;
   handleSelectSession: (session: ModalSessionItem | null) => Promise<void>;
@@ -143,15 +145,34 @@ export const SseSessionController = memo(function SseSessionController({
     setGlobalSessionId(sessionId);
   }, [provider, model, sessionId, setGlobalProvider, setGlobalModel, setGlobalSessionId]);
 
+  const [noProviderConnected, setNoProviderConnected] = useState(false);
+
   const hasRestoredProviderModel = useRef(false);
   useEffect(() => {
     if (hasRestoredProviderModel.current) return;
     hasRestoredProviderModel.current = true;
+
     sessionStore
       .loadLastUsedProviderModel()
-      .then((lastUsed) => hydrateLastUsedProviderModel(lastUsed, setProvider, setModel))
+      .then(async (lastUsed) => {
+        if (lastUsed !== null) {
+          // User has a saved preference — restore it and we're done.
+          hydrateLastUsedProviderModel(lastUsed, setProvider, setModel);
+          return;
+        }
+
+        // No stored preference: ask the server which providers are connected
+        // and set the first one as the default.
+        const result = await fetchConnectedProviders();
+        if (result && result.defaultProvider && isValidProvider(result.defaultProvider)) {
+          setProvider(result.defaultProvider as Provider);
+        } else if (result && result.connectedProviders.length === 0) {
+          // No providers configured at all — show the setup guide.
+          setNoProviderConnected(true);
+        }
+      })
       .catch(() => {
-        // Ignore restore failures.
+        // Ignore restore/fetch failures — keep current defaults.
       });
   }, [setModel, setProvider]);
 
@@ -322,6 +343,7 @@ export const SseSessionController = memo(function SseSessionController({
       storeProvider,
       storeModel,
       storeSessionId,
+      noProviderConnected,
       handleModelChange,
       handleProviderChange,
       handleSelectSession,
@@ -356,6 +378,7 @@ export const SseSessionController = memo(function SseSessionController({
       storeProvider,
       storeModel,
       storeSessionId,
+      noProviderConnected,
       handleModelChange,
       handleProviderChange,
       handleSelectSession,

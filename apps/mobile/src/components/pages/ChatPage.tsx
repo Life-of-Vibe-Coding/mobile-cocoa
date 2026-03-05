@@ -1,4 +1,5 @@
 import { ChatModalsSection } from "@/components/chat/ChatModalsSection";
+import { NoProviderBanner } from "@/components/chat/NoProviderBanner";
 import type { CodeRefPayload } from "@/components/file/FileViewerModal";
 import { SwipeablePageNavigator } from "@/components/navigation/SwipeablePageNavigator";
 import { ChatPageShell } from "@/components/pages/ChatPageShell";
@@ -183,6 +184,7 @@ export type ChatPageProps = {
   sidebar: ChatPageSidebar;
   inputDock: ChatPageInputDock;
   modals: ChatPageModals;
+  noProviderConnected?: boolean;
 };
 
 export function ChatPage({
@@ -194,6 +196,7 @@ export function ChatPage({
   sidebar,
   inputDock,
   modals,
+  noProviderConnected = false,
 }: ChatPageProps) {
   const isFileViewerOpen = fileViewer.selectedFilePath != null;
 
@@ -257,6 +260,9 @@ export function ChatPage({
               />
             ) : (
               <>
+                {noProviderConnected && conversation.messages.length === 0 && (
+                  <NoProviderBanner />
+                )}
                 <ChatPageShell
                   context={context}
                   runtime={runtime}
